@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Extensions;
 using AgentFramework.Core.Messages;
+using AgentFramework.Core.Messages.Connections;
 using Newtonsoft.Json;
 
 namespace AgentFramework.Core.Utils
@@ -17,7 +18,7 @@ namespace AgentFramework.Core.Utils
         /// <summary>
         /// The valid query parameters.
         /// </summary>
-        public static string[] ValidQueryParameters = { "m", "c_i" };
+        public static string[] ValidQueryParameters = { "m", "c_i", "c_a_r" };
 
         /// <summary>
         /// Encodes a message to a valid URL based format.
@@ -101,7 +102,7 @@ namespace AgentFramework.Core.Utils
         public static T DecodeMessageFromUrlFormat<T>(string encodedMessage)
         {
             var json = DecodeMessageFromUrlFormat(encodedMessage);
-
+           
             return JsonConvert.DeserializeObject<T>(json);
         }
 
