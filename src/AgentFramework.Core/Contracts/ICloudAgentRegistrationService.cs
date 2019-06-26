@@ -19,6 +19,6 @@ namespace AgentFramework.Core.Contracts
         /// <param name="agentContext">Agent Context.</param>
         /// <param name="registration">Cloud Agent Registration Details</param>
         /// <returns>Creates a non-secret record of the cloud agent in the wallet.</returns>
-        Task<ConnectionRecord> RegisterCloudAgentAsync(IAgentContext agentContext, CloudAgentRegistrationMessage registration);
+        Task<CloudAgentRegistrationRecord> RegisterCloudAgentAsync(IAgentContext agentContext, CloudAgentRegistrationMessage registration);
     }
 }

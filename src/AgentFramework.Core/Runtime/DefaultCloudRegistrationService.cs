@@ -29,17 +29,9 @@ namespace AgentFramework.Core.Handlers.Agents
     public class DefaultCloudRegistrationService : ICloudAgentRegistrationService
     {
         /// <summary>
-        /// The event aggregator.
-        /// </summary>
-        protected readonly IEventAggregator EventAggregator;
-        /// <summary>
         /// The record service
         /// </summary>
         protected readonly IWalletRecordService RecordService;
-        /// <summary>
-        /// The provisioning service
-        /// </summary>
-        protected readonly IProvisioningService ProvisioningService;
         /// <summary>
         /// The logger
         /// </summary>
@@ -48,29 +40,32 @@ namespace AgentFramework.Core.Handlers.Agents
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultCloudRegistrationService"/> class.
         /// </summary>
-        /// <param name="eventAggregator">The event aggregator.</param>
         /// <param name="recordService">The record service.</param>
-        /// <param name="provisioningService">The provisioning service.</param>
         /// <param name="logger">The logger.</param>
         public DefaultCloudRegistrationService(
-            IEventAggregator eventAggregator,
             IWalletRecordService recordService,
-            IProvisioningService provisioningService,
             ILogger<DefaultConnectionService> logger)
         {
-            EventAggregator = eventAggregator;
-            ProvisioningService = provisioningService;
             Logger = logger;
             RecordService = recordService;
         }
 
         /// <inheritdoc />
-        public virtual async Task<ConnectionRecord> RegisterCloudAgentAsync(IAgentContext agentContext, CloudAgentRegistrationMessage registration)
+        public virtual async Task<CloudAgentRegistrationRecord> RegisterCloudAgentAsync(IAgentContext agentContext, CloudAgentRegistrationMessage registration)
         {
             Logger.LogInformation(LoggingEvents.CloudAgentRegistration, "Key {0}, Endpoint {1}",
                 registration.RecipientKeys[0], registration.ServiceEndpoint);
-
-            return null;
+            var record = new CloudAgentRegistrationRecord
+            {
+                Endpoint = new CloudAgentEndpoint(registration.ServiceEndpoint, registration.ConsumerEndpoint, registration.ResponseEndpoint),
+                TheirVk = registration.RecipientKeys[0],
+                Label = registration.Label,
+                MyConsumerId = registration.Consumer,
+                Id = Guid.NewGuid().ToString().ToLowerInvariant()
+            };
+            record.SetTag(TagConstants.CloudAgent, registration.Label);
+            await RecordService.AddAsync(agentContext.Wallet, record);
+            return record;
         }
     }
 }
