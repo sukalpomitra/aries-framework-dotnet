@@ -64,8 +64,17 @@ namespace AgentFramework.Core.Handlers.Agents
                 Id = Guid.NewGuid().ToString().ToLowerInvariant()
             };
             record.SetTag(TagConstants.CloudAgent, registration.Label);
+
             await RecordService.AddAsync(agentContext.Wallet, record);
+
             return record;
+
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(IAgentContext agentContext)
+        {
+            return await RecordService.SearchAsync<CloudAgentRegistrationRecord>(agentContext.Wallet, null, null, 100);
         }
     }
 }

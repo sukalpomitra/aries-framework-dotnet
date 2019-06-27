@@ -38,6 +38,10 @@
         /// <summary>
         /// The parameter was in an invalid format
         /// </summary>
-        InvalidParameterFormat
+        InvalidParameterFormat,
+        /// <summary>
+        /// The Cloud agent is already registered
+        /// </summary>
+        CloudAgentAlreadyRegistered
     }
 }
