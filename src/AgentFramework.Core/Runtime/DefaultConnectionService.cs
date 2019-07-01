@@ -126,7 +126,8 @@ namespace AgentFramework.Core.Handlers.Agents
         }
 
         /// <inheritdoc />
-        public virtual async Task<(ConnectionRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, ConnectionInvitationMessage invitation)
+        public virtual async Task<(ConnectionRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, ConnectionInvitationMessage invitation,
+            string responseEndpoint = "")
         {
             Logger.LogInformation(LoggingEvents.AcceptInvitation, "Key {0}, Endpoint {1}",
                 invitation.RecipientKeys[0], invitation.ServiceEndpoint);
@@ -158,7 +159,7 @@ namespace AgentFramework.Core.Handlers.Agents
             var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
             var request = new ConnectionRequestMessage
             {
-                Connection = new Connection {Did = connection.MyDid, DidDoc = connection.MyDidDoc(provisioning)},
+                Connection = new Connection {Did = connection.MyDid, DidDoc = connection.MyDidDoc(provisioning, responseEndpoint)},
                 Label = provisioning.Owner?.Name,
                 ImageUrl = provisioning.Owner?.ImageUrl
             };

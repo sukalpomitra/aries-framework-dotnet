@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using AgentFramework.Core.Messages;
 using AgentFramework.Core.Models.Records;
 using Hyperledger.Indy.WalletApi;
@@ -36,6 +37,16 @@ namespace AgentFramework.Core.Contracts
         /// <returns>The response async.</returns>
         Task<byte[]> PrepareAsync(Wallet wallet, AgentMessage message, string recipientKey, string[] routingKeys = null,
             string senderKey = null);
+
+        /// <summary>
+        /// Prepare a cloud agent forwarding route and packs the messages accordingly.
+        /// </summary>
+        /// <param name="wallet">The wallet.</param>
+        /// <param name="message">The message context.</param>
+        /// <param name="endpointUri">The endpoint uri.</param>
+        /// <param name="cloudAgentList">The list of cloud agents.</param>
+        /// <returns>The response async.</returns>
+        Task<(byte[], string)> PrepareRouteAsync(Wallet wallet, byte[] message, string endpointUri);
 
         /// <summary>
         /// Sends the agent message asynchronously.

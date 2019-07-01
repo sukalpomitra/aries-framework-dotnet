@@ -54,7 +54,6 @@ namespace AgentFramework.Core.Models.Records
         /// Gets or sets My Consumer id.
         /// </summary>
         /// <value>My Consumer Id.</value>
-        [JsonIgnore]
         public string MyConsumerId
         {
             get => Get();
@@ -65,7 +64,6 @@ namespace AgentFramework.Core.Models.Records
         /// Gets or sets CloudAgentEndpoint.
         /// </summary>
         /// <value>CloudAgentEndpoint.</value>
-        [JsonIgnore]
         public CloudAgentEndpoint Endpoint
         {
             get;

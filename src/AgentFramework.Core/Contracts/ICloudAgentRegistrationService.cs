@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Messages.Connections;
-using AgentFramework.Core.Models.Connections;
 using AgentFramework.Core.Models.Records;
-using AgentFramework.Core.Models.Records.Search;
+using Hyperledger.Indy.WalletApi;
 
 namespace AgentFramework.Core.Contracts
 {
@@ -18,7 +16,6 @@ namespace AgentFramework.Core.Contracts
         /// </summary>
         /// <param name="agentContext">Agent Context.</param>
         /// <param name="registration">Cloud Agent Registration Details</param>
-        /// <exception cref="AgentFrameworkException">Throws with ErrorCode.CloudAgentAlreadyRegistered.</exception>
         /// <returns>Creates a non-secret record of the cloud agent in the wallet.</returns>
         Task<CloudAgentRegistrationRecord> RegisterCloudAgentAsync(IAgentContext agentContext, CloudAgentRegistrationMessage registration);
 
@@ -27,6 +24,13 @@ namespace AgentFramework.Core.Contracts
         /// </summary>
         /// <param name="agentContext">Agent Context.</param>
         /// <returns>Fetches all registered cloud agents from non-secret records in the wallet having a tag cloudagent.</returns>
-        Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(IAgentContext agentContext);
+        Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(Wallet wallet);
+
+        /// <summary>
+        /// Get All Registered Cloud Agents async.
+        /// </summary>
+        /// <param name="records">List of Cloud Agents.</param>
+        /// <returns>Returns a random cloud agent from a list of cloud agents.</returns>
+        CloudAgentRegistrationRecord getRandomCloudAgent(List<CloudAgentRegistrationRecord> records);
     }
 }

@@ -20,7 +20,7 @@ namespace AgentFramework.Core.Extensions
         /// <param name="connection">Connection record.</param>
         /// <param name="provisioningRecord">Provisioning record.</param>
         /// <returns>DID Doc</returns>
-        public static DidDoc MyDidDoc(this ConnectionRecord connection, ProvisioningRecord provisioningRecord)
+        public static DidDoc MyDidDoc(this ConnectionRecord connection, ProvisioningRecord provisioningRecord, string responseEndpoint = "")
         {
             var doc = new DidDoc
             {
@@ -43,7 +43,7 @@ namespace AgentFramework.Core.Extensions
                     new IndyAgentDidDocService
                     {
                         Id = $"{connection.MyDid};indy",
-                        ServiceEndpoint = provisioningRecord.Endpoint.Uri,
+                        ServiceEndpoint = responseEndpoint != string.Empty ? responseEndpoint :  provisioningRecord.Endpoint.Uri ,
                         RecipientKeys = connection.MyVk != null ? new[] { connection.MyVk } : new string[0],
                         RoutingKeys = provisioningRecord.Endpoint?.Verkey != null ? new[] { provisioningRecord.Endpoint.Verkey } : new string[0]
                     }

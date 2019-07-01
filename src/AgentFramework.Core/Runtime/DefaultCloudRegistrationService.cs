@@ -1,27 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Net.Cache;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
-using AgentFramework.Core.Decorators.Attachments;
-using AgentFramework.Core.Decorators.Signature;
-using AgentFramework.Core.Decorators.Threading;
-using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Messages.Connections;
-using AgentFramework.Core.Models.Connections;
 using AgentFramework.Core.Models.Records;
-using AgentFramework.Core.Models.Records.Search;
-using AgentFramework.Core.Extensions;
 using AgentFramework.Core.Models;
-using AgentFramework.Core.Models.Dids;
-using AgentFramework.Core.Models.Events;
 using AgentFramework.Core.Utils;
-using Hyperledger.Indy.CryptoApi;
-using Hyperledger.Indy.DidApi;
-using Hyperledger.Indy.PairwiseApi;
 using Microsoft.Extensions.Logging;
-using ConnectionState = AgentFramework.Core.Models.Records.ConnectionState;
+using Hyperledger.Indy.WalletApi;
 
 namespace AgentFramework.Core.Handlers.Agents
 {
@@ -72,9 +58,19 @@ namespace AgentFramework.Core.Handlers.Agents
         }
 
         /// <inheritdoc />
-        public virtual async Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(IAgentContext agentContext)
+        public virtual async Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(Wallet wallet)
         {
-            return await RecordService.SearchAsync<CloudAgentRegistrationRecord>(agentContext.Wallet, null, null, 100);
+            return await RecordService.SearchAsync<CloudAgentRegistrationRecord>(wallet, null, null, 100);
+        }
+
+        /// <inheritdoc />
+        public CloudAgentRegistrationRecord getRandomCloudAgent(List<CloudAgentRegistrationRecord> records)
+        {
+            Random rand = new Random();
+            var randomNumber = rand.Next(0, records.Count);
+            var record = records[randomNumber];
+            records.RemoveAt(randomNumber);
+            return record;
         }
     }
 }
