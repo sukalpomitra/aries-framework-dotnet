@@ -44,7 +44,6 @@ namespace AgentFramework.Core.Contracts
         /// <param name="wallet">The wallet.</param>
         /// <param name="message">The message context.</param>
         /// <param name="endpointUri">The endpoint uri.</param>
-        /// <param name="cloudAgentList">The list of cloud agents.</param>
         /// <returns>The response async.</returns>
         Task<(byte[], string)> PrepareRouteAsync(Wallet wallet, byte[] message, string endpointUri);
 

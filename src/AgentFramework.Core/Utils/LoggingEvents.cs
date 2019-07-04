@@ -28,6 +28,7 @@ namespace AgentFramework.Core.Utils
         public const int ListConnections = 4011;
         public const int DeleteConnection = 4012;
         public const int CloudAgentRegistration = 4013;
+        public const int CloudAgentRegistrationRemoval = 4014;
 
 
         public const int SendMessage = 3000;

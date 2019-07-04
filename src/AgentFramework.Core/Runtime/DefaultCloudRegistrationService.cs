@@ -72,5 +72,15 @@ namespace AgentFramework.Core.Handlers.Agents
             records.RemoveAt(randomNumber);
             return record;
         }
+
+        /// <inheritdoc />
+        public virtual async Task removeCloudAgentAsync(Wallet wallet, string id)
+        {
+            Logger.LogInformation(LoggingEvents.CloudAgentRegistrationRemoval, "ID {0}",
+                id);
+
+            await RecordService.DeleteAsync<CloudAgentRegistrationRecord>(wallet, id);
+
+        }
     }
 }

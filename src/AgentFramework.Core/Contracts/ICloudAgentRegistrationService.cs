@@ -22,7 +22,7 @@ namespace AgentFramework.Core.Contracts
         /// <summary>
         /// Get All Registered Cloud Agents async.
         /// </summary>
-        /// <param name="agentContext">Agent Context.</param>
+        /// <param name="wallet">Wallet.</param>
         /// <returns>Fetches all registered cloud agents from non-secret records in the wallet having a tag cloudagent.</returns>
         Task<List<CloudAgentRegistrationRecord>> GetAllCloudAgentAsync(Wallet wallet);
 
@@ -32,5 +32,13 @@ namespace AgentFramework.Core.Contracts
         /// <param name="records">List of Cloud Agents.</param>
         /// <returns>Returns a random cloud agent from a list of cloud agents.</returns>
         CloudAgentRegistrationRecord getRandomCloudAgent(List<CloudAgentRegistrationRecord> records);
+
+        /// <summary>
+        /// Deletes a Registered Cloud Agents async.
+        /// </summary>
+        /// <param name="wallet">wallet.</param>
+        /// <param name="id">Record id.</param>
+        /// <returns>Boolean status indicating if the removal succeed</returns>
+        Task removeCloudAgentAsync(Wallet wallet, string id);
     }
 }

@@ -163,7 +163,6 @@ namespace AgentFramework.Core.Handlers.Agents
 
             var wireMsg = await PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
             var (msg, serviceEndpoint) = await PrepareRouteAsync(wallet, wireMsg, endpointUri);
-
             var uri = new Uri(serviceEndpoint);
 
             var dispatcher = GetDispatcher(uri.Scheme);
