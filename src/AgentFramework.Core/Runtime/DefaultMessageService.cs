@@ -173,6 +173,26 @@ namespace AgentFramework.Core.Handlers.Agents
             return await dispatcher.DispatchAsync(uri, new MessageContext(msg, true));
         }
 
+        /// <inheritdoc />
+        public virtual async Task<List<MessageContext>> ConsumeAsync(Wallet wallet)
+        {
+            var records = await _registrationService.GetAllCloudAgentAsync(wallet);
+            List<MessageContext> messages = new List<MessageContext>();
+            foreach (var record in records)
+            {
+                var uri = new Uri(record.Endpoint.ConsumerEndpoint + "/" + record.MyConsumerId);
+
+                var dispatcher = GetDispatcher(uri.Scheme);
+
+                if (dispatcher == null)
+                    throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
+
+                var messageContexts = await dispatcher.ConsumeAsync(uri);
+                messages.AddRange(messageContexts);
+            }
+            return messages;
+        }
+
         private IMessageDispatcher GetDispatcher(string scheme) => MessageDispatchers.FirstOrDefault(_ => _.TransportSchemes.Contains(scheme));
     }
 }

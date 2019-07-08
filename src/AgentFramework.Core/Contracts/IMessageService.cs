@@ -72,5 +72,12 @@ namespace AgentFramework.Core.Contracts
         Task<MessageContext> SendAsync(Wallet wallet, AgentMessage message, string recipientKey,
             string endpointUri, string[] routingKeys = null, string senderKey = null, bool requestResponse = false);
 
+        /// <summary>
+        /// Sends the agent message to the endpoint asynchronously.
+        /// </summary>
+        /// <param name="wallet">The wallet.</param>
+        /// <returns>The response as a list of message context object async.</returns>
+        Task<List<MessageContext>> ConsumeAsync(Wallet wallet);
+
     }
 }
