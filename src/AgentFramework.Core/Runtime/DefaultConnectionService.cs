@@ -106,7 +106,7 @@ namespace AgentFramework.Core.Handlers.Agents
             return (new ConnectionInvitationMessage
                     {
                         ServiceEndpoint = provisioning.Endpoint.Uri,
-                        RoutingKeys = provisioning.Endpoint.Verkey != null ? new[] {provisioning.Endpoint.Verkey} : null,
+                        RoutingKeys = null,//provisioning.Endpoint.Verkey != null ? new[] {provisioning.Endpoint.Verkey} : null,
                         RecipientKeys = new[] {connectionKey},
                         Label = config.MyAlias.Name ?? provisioning.Owner.Name,
                         ImageUrl = config.MyAlias.ImageUrl ?? provisioning.Owner.ImageUrl
