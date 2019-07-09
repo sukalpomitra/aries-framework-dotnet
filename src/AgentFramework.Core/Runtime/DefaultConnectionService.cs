@@ -37,6 +37,10 @@ namespace AgentFramework.Core.Handlers.Agents
         /// </summary>
         protected readonly IWalletRecordService RecordService;
         /// <summary>
+        /// The cloud agent registration service
+        /// </summary>
+        protected readonly ICloudAgentRegistrationService CloudAgentRegistrationService;
+        /// <summary>
         /// The provisioning service
         /// </summary>
         protected readonly IProvisioningService ProvisioningService;
@@ -55,6 +59,7 @@ namespace AgentFramework.Core.Handlers.Agents
         public DefaultConnectionService(
             IEventAggregator eventAggregator,
             IWalletRecordService recordService,
+            ICloudAgentRegistrationService cloudAgentRegistrationService,
             IProvisioningService provisioningService,
             ILogger<DefaultConnectionService> logger)
         {
@@ -62,6 +67,7 @@ namespace AgentFramework.Core.Handlers.Agents
             ProvisioningService = provisioningService;
             Logger = logger;
             RecordService = recordService;
+            CloudAgentRegistrationService = cloudAgentRegistrationService;
         }
         
         /// <inheritdoc />
@@ -97,15 +103,26 @@ namespace AgentFramework.Core.Handlers.Agents
                 connection.SetTag(tag.Key, tag.Value);
 
             var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
-
+            string uri = "";
             if (string.IsNullOrEmpty(provisioning.Endpoint.Uri))
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState, "Provision record has no endpoint information specified");
+            {
+                var records = await CloudAgentRegistrationService.GetAllCloudAgentAsync(agentContext.Wallet);
+                if (records.Count > 0)
+                {
+                    var record = CloudAgentRegistrationService.getRandomCloudAgent(records);
+                    uri = record.Endpoint.ResponseEndpoint;
+                }
+                else
+                {
+                    throw new AgentFrameworkException(ErrorCode.RecordInInvalidState, "No Cloud Agent Registered");
+                }
+            }
 
             await RecordService.AddAsync(agentContext.Wallet, connection);
 
             return (new ConnectionInvitationMessage
                     {
-                        ServiceEndpoint = provisioning.Endpoint.Uri,
+                        ServiceEndpoint = uri,
                         RoutingKeys = null,//provisioning.Endpoint.Verkey != null ? new[] {provisioning.Endpoint.Verkey} : null,
                         RecipientKeys = new[] {connectionKey},
                         Label = config.MyAlias.Name ?? provisioning.Owner.Name,
