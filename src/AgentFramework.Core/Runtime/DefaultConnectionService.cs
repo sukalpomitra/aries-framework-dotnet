@@ -110,7 +110,7 @@ namespace AgentFramework.Core.Handlers.Agents
                 if (records.Count > 0)
                 {
                     var record = CloudAgentRegistrationService.getRandomCloudAgent(records);
-                    uri = record.Endpoint.ResponseEndpoint;
+                    uri = record.Endpoint.ResponseEndpoint + "/" + record.MyConsumerId;
                 }
                 else
                 {
