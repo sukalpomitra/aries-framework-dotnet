@@ -79,5 +79,14 @@ namespace AgentFramework.Core.Contracts
         /// <returns>The response as a list of message context object async.</returns>
         Task<List<MessageContext>> ConsumeAsync(Wallet wallet);
 
+        /// <summary>
+        /// Unpack message.
+        /// </summary>
+        /// <param name="wallet">The wallet.</param>
+        /// <param name="message">The packed message.</param>
+        /// <param name="connection">The connection associated to it.</param>
+        /// <returns>The response as a list of message context object async.</returns>
+        Task<MessageContext> UnpackAsync(Wallet wallet, MessageContext message, ConnectionRecord connection);
+
     }
 }

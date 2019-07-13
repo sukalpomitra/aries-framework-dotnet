@@ -36,7 +36,7 @@ namespace AgentFramework.Core.Extensions
                 }
             };
 
-            if (!string.IsNullOrEmpty(provisioningRecord.Endpoint.Uri))
+            if (!string.IsNullOrEmpty(provisioningRecord.Endpoint.Uri) || !string.IsNullOrEmpty(responseEndpoint))
             {
                 doc.Services = new List<IDidDocServiceEndpoint>
                 {
