@@ -87,7 +87,7 @@ namespace AgentFramework.Core.Handlers.Agents
             var connection = new ConnectionRecord {Id = connectionId};
             connection.SetTag(TagConstants.ConnectionKey, connectionKey);
 
-            if (config.AutoAcceptConnection)
+            //if (config.AutoAcceptConnection)
                 connection.SetTag(TagConstants.AutoAcceptConnection, "true");
 
             connection.MultiPartyInvitation = config.MultiPartyInvitation;
