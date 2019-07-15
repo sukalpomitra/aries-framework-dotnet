@@ -59,12 +59,12 @@ namespace AgentFramework.Core.Handlers.Internal
                     var request = messageContext.GetMessage<ConnectionRequestMessage>();
                     var connectionId = await _connectionService.ProcessRequestAsync(agentContext, request, messageContext.Connection);
                     // Auto accept connection if set during invitation
-                    //if (messageContext.Connection.GetTag(TagConstants.AutoAcceptConnection) == "true")
-                    //{
+                    if (messageContext.Connection.GetTag(TagConstants.AutoAcceptConnection) == "true")
+                    {
                         (var message, var _) = await _connectionService.CreateResponseAsync(agentContext, connectionId);
                         return message;
-                    //}
-                    //return null;
+                    }
+                    return null;
                 }
 
                 case MessageTypes.ConnectionResponse:
