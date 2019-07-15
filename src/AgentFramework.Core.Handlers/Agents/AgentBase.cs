@@ -53,7 +53,7 @@ namespace AgentFramework.Core.Handlers
         }
 
         /// <summary>Adds a handler for supporting default connection flow.</summary>
-        protected void AddConnectionHandler() => Handlers.Add(Provider.GetRequiredService<DefaultConnectionHandler>());
+        protected void AddConnectionHandler() => Handlers.Add(Provider.GetRequiredService<IMessageHandler>());
 
         /// <summary>Adds a handler for supporting default credential flow.</summary>
         protected void AddCredentialHandler() => Handlers.Add(Provider.GetRequiredService<DefaultCredentialHandler>());
