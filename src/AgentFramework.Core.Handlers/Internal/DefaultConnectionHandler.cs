@@ -8,7 +8,7 @@ using AgentFramework.Core.Utils;
 
 namespace AgentFramework.Core.Handlers.Internal
 {
-    internal class DefaultConnectionHandler : IMessageHandler
+    public class DefaultConnectionHandler : IMessageHandler
     {
         private readonly IConnectionService _connectionService;
         private readonly IMessageService _messageService;

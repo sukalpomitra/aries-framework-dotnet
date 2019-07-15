@@ -100,7 +100,7 @@ namespace AgentFramework.Core.Handlers.Agents
             return (message, endpointUri);
         }
 
-        public async Task<MessageContext> UnpackAsync(Wallet wallet, MessageContext message, ConnectionRecord connection)
+        private async Task<MessageContext> UnpackAsync(Wallet wallet, MessageContext message, ConnectionRecord connection)
         {
             UnpackResult unpacked;
 
