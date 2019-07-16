@@ -315,10 +315,18 @@ namespace AgentFramework.Core.Handlers.Agents
             // Send back response message
             var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
 
+            string responseEndpoint = string.Empty;
+            var records = await CloudAgentRegistrationService.GetAllCloudAgentAsync(agentContext.Wallet);
+            if (records.Count > 0)
+            {
+                var record = CloudAgentRegistrationService.getRandomCloudAgent(records);
+                responseEndpoint = record.Endpoint.ResponseEndpoint + "/" + record.MyConsumerId;
+            }
+
             var connectionData = new Connection
             {
                 Did = connection.MyDid,
-                DidDoc = connection.MyDidDoc(provisioning)
+                DidDoc = connection.MyDidDoc(provisioning, responseEndpoint)
             };
 
             var sigData = await SignatureUtils.SignData(agentContext, connectionData, connection.GetTag(TagConstants.ConnectionKey));
