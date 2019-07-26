@@ -22,6 +22,7 @@ namespace AgentFramework.AspNetCore
         protected override void ConfigureHandlers()
         {
             AddConnectionHandler();
+            AddCredentialHandler();
             //AddForwardHandler();
         }
     }

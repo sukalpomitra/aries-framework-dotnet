@@ -7,7 +7,7 @@ using AgentFramework.Core.Messages.Credentials;
 
 namespace AgentFramework.Core.Handlers.Internal
 {
-    internal class DefaultCredentialHandler : IMessageHandler
+    public class DefaultCredentialHandler : IMessageHandler
     {
         private readonly ICredentialService _credentialService;
         private readonly IMessageService _messageService;
