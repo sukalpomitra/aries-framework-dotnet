@@ -137,7 +137,7 @@ namespace AgentFramework.Core.Handlers.Agents
         }
 
         /// <inheritdoc />
-        public virtual async Task<(CredentialRequestMessage, CredentialRecord)> CreateCredentialRequestAsync(
+        public virtual async Task<(CredentialRequestMessage, ConnectionRecord)> CreateCredentialRequestAsync(
             IAgentContext agentContext, string offerId)
         {
             var credential = await GetAsync(agentContext, offerId);
@@ -170,7 +170,7 @@ namespace AgentFramework.Core.Handlers.Agents
 
             response.ThreadFrom(threadId);
 
-            return (response, credential);
+            return (response, connection);
         }
 
         /// <inheritdoc />
