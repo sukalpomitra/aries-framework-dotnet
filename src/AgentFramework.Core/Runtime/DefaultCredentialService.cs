@@ -196,12 +196,7 @@ namespace AgentFramework.Core.Handlers.Agents
             JObject values = (JObject)offer["values"];
             IList<string> keys = values.Properties().Select(p => p.Name).ToList();
 
-            List<CredentialPreviewAttribute> attributes = new List<CredentialPreviewAttribute>();
-            foreach (var item in keys)
-            {
-                CredentialPreviewAttribute attribute = new CredentialPreviewAttribute(item, values[item]["raw"]?.ToString());
-                attributes.Add(attribute);
-            }
+            var attributes = keys.Select(k => new CredentialPreviewAttribute() { Name = k, Value = values[k]["raw"]?.ToString() }).ToList();
 
             var credentialRecord = await this.GetByThreadIdAsync(agentContext, credential.GetThreadId());
 
