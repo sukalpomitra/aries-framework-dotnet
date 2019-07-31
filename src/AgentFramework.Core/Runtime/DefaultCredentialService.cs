@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Decorators.Threading;
@@ -192,6 +193,15 @@ namespace AgentFramework.Core.Handlers.Agents
             var offer = JObject.Parse(credential.CredentialJson);
             var definitionId = offer["cred_def_id"].ToObject<string>();
             var revRegId = offer["rev_reg_id"]?.ToObject<string>();
+            JObject values = (JObject)offer["values"];
+            IList<string> keys = values.Properties().Select(p => p.Name).ToList();
+
+            List<CredentialPreviewAttribute> attributes = new List<CredentialPreviewAttribute>();
+            foreach (var item in keys)
+            {
+                CredentialPreviewAttribute attribute = new CredentialPreviewAttribute(item, values[item]["raw"]?.ToString());
+                attributes.Add(attribute);
+            }
 
             var credentialRecord = await this.GetByThreadIdAsync(agentContext, credential.GetThreadId());
 
@@ -199,9 +209,11 @@ namespace AgentFramework.Core.Handlers.Agents
                 throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Credential state was invalid. Expected '{CredentialState.Requested}', found '{credentialRecord.State}'");
 
+           
             var credentialDefinition = await LedgerService.LookupDefinitionAsync(await agentContext.Pool, definitionId);
 
             string revocationRegistryDefinitionJson = null;
+
             if (!string.IsNullOrEmpty(revRegId))
             {
                 // If credential supports revocation, lookup registry definition
@@ -215,7 +227,7 @@ namespace AgentFramework.Core.Handlers.Agents
                 credential.CredentialJson, credentialDefinition.ObjectJson, revocationRegistryDefinitionJson);
 
             credentialRecord.CredentialId = credentialId;
-            credentialRecord.CredentialAttributesValues = null;
+            credentialRecord.CredentialAttributesValues = attributes;
 
             await credentialRecord.TriggerAsync(CredentialTrigger.Issue);
             await RecordService.UpdateAsync(agentContext.Wallet, credentialRecord);
