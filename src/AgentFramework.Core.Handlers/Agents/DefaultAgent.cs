@@ -23,7 +23,7 @@ namespace AgentFramework.AspNetCore
         {
             AddConnectionHandler();
             AddCredentialHandler();
-            //AddForwardHandler();
+            AddProofHandler();
         }
     }
 }

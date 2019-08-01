@@ -7,7 +7,7 @@ using AgentFramework.Core.Messages.Proofs;
 
 namespace AgentFramework.Core.Handlers.Internal
 {
-    internal class DefaultProofHandler : IMessageHandler
+    public class DefaultProofHandler : IMessageHandler
     {
         private readonly IProofService _proofService;
 

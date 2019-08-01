@@ -62,7 +62,7 @@ namespace AgentFramework.Core.Handlers
         protected void AddTrustPingHandler() => Handlers.Add(Provider.GetRequiredService<DefaultTrustPingMessageHandler>());
 
         /// <summary>Adds the handler for supporting default proof flow.</summary>
-        protected void AddProofHandler() => Handlers.Add(Provider.GetRequiredService<DefaultProofHandler>());
+        protected void AddProofHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[2]);
 
         /// <summary>Adds a default forwarding handler.</summary>
         protected void AddForwardHandler() => Handlers.Add(Provider.GetRequiredService<DefaultForwardHandler>());
