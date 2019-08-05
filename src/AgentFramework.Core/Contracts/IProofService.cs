@@ -75,7 +75,7 @@ namespace AgentFramework.Core.Contracts
         /// <returns>
         /// The proof.
         /// </returns>
-        Task<(ProofMessage, ProofRecord)> CreateProofAsync(IAgentContext agentContext, string proofRequestId,
+        Task<(ProofMessage, ConnectionRecord)> CreateProofAsync(IAgentContext agentContext, string proofRequestId,
             RequestedCredentials requestedCredentials);
 
         /// <summary>

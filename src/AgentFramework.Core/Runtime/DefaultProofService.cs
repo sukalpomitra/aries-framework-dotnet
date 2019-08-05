@@ -188,10 +188,11 @@ namespace AgentFramework.Core.Handlers.Agents
         }
 
         /// <inheritdoc />
-        public virtual async Task<(ProofMessage, ProofRecord)> CreateProofAsync(IAgentContext agentContext, 
+        public virtual async Task<(ProofMessage, ConnectionRecord)> CreateProofAsync(IAgentContext agentContext, 
             string proofRequestId, RequestedCredentials requestedCredentials)
         {
             var record = await GetAsync(agentContext, proofRequestId);
+            var connection = await ConnectionService.GetAsync(agentContext, record.ConnectionId);
 
             if (record.State != ProofState.Requested)
                 throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
@@ -238,7 +239,7 @@ namespace AgentFramework.Core.Handlers.Agents
 
             proofMsg.ThreadFrom(threadId);
 
-            return (proofMsg, record);
+            return (proofMsg, connection);
         }
 
         /// <inheritdoc />
