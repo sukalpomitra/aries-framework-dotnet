@@ -120,7 +120,8 @@ namespace AgentFramework.Core.Handlers.Agents
                 CredentialDefinitionId = definitionId,
                 CredentialAttributesValues = credentialOffer.Preview?.Attributes,
                 SchemaId = schemaId,
-                State = CredentialState.Offered
+                Name = (schemaId.Split(':')[2]).Replace(" schema", "") + " - " + (schemaId.Split(':')[3]),
+            State = CredentialState.Offered
             };
             credentialRecord.SetTag(TagConstants.Role, TagConstants.Holder);
             credentialRecord.SetTag(TagConstants.LastThreadId, credentialOffer.GetThreadId());
