@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Exceptions;
@@ -71,6 +73,12 @@ namespace AgentFramework.Core.Handlers.Internal
                 {
                     var response = messageContext.GetMessage<ConnectionResponseMessage>();
                     await _connectionService.ProcessResponseAsync(agentContext, response, messageContext.Connection);
+                    if (messageContext.Connection.Sso)
+                    {
+                        var endpoint = messageContext.Connection.Endpoint.Uri.Replace("response", "trigger/") + messageContext.Connection.MyDid;
+                        HttpClient httpClient = new HttpClient();
+                        await httpClient.GetAsync(new System.Uri(endpoint));
+                    }
                     return null;
                 }
                 default:

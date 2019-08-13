@@ -156,8 +156,10 @@ namespace AgentFramework.Core.Handlers.Agents
                 Endpoint = new AgentEndpoint(invitation.ServiceEndpoint, null, invitation.RoutingKeys != null && invitation.RoutingKeys.Count != 0 ? invitation.RoutingKeys[0] : null),
                 MyDid = my.Did,
                 MyVk = my.VerKey,
-                Id = Guid.NewGuid().ToString().ToLowerInvariant()
+                Id = Guid.NewGuid().ToString().ToLowerInvariant(),
+                Sso = invitation.Sso
             };
+            connection.SetTag("sso", invitation.Sso.ToString());
 
             if (!string.IsNullOrEmpty(invitation.Label) || !string.IsNullOrEmpty(invitation.ImageUrl))
             {
