@@ -75,7 +75,8 @@ namespace AgentFramework.Core.Handlers.Internal
                     await _connectionService.ProcessResponseAsync(agentContext, response, messageContext.Connection);
                     if (messageContext.Connection.Sso)
                     {
-                        var endpoint = messageContext.Connection.Endpoint.Uri.Replace("response", "trigger/") + messageContext.Connection.MyDid;
+                        var endpoint = messageContext.Connection.Endpoint.Uri.Replace("response", "trigger/")
+                                + messageContext.Connection.MyDid + "/" + messageContext.Connection.InvitationKey;
                         HttpClient httpClient = new HttpClient();
                         await httpClient.GetAsync(new System.Uri(endpoint));
                     }

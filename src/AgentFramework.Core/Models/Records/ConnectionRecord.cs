@@ -138,6 +138,16 @@ namespace AgentFramework.Core.Models.Records
             set;
         }
 
+        /// <summary>
+        /// Gets or sets the invitation key param to the connection.
+        /// </summary>
+        /// <value>The sso param.</value>
+        public string InvitationKey
+        {
+            get;
+            set;
+        }
+
         #region State Machine Implementation
 
         /// <summary>

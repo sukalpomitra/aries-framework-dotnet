@@ -157,7 +157,8 @@ namespace AgentFramework.Core.Handlers.Agents
                 MyDid = my.Did,
                 MyVk = my.VerKey,
                 Id = Guid.NewGuid().ToString().ToLowerInvariant(),
-                Sso = invitation.Sso
+                Sso = invitation.Sso,
+                InvitationKey = invitation.InvitationKey
             };
             connection.SetTag("sso", invitation.Sso.ToString());
 
