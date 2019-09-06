@@ -16,6 +16,8 @@ namespace AgentFramework.Core.Models.Records
         private string _issuerVerkey;
         [JsonProperty]
         private string _issuerDid;
+        [JsonProperty]
+        private string _passCode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProvisioningRecord"/> class.
@@ -45,6 +47,16 @@ namespace AgentFramework.Core.Models.Records
         {
             get;
             internal set;
+        }
+
+        /// <summary>
+        /// Gets or sets the passcode for auth.
+        /// </summary>
+        /// <returns>The passcode for auth</returns>
+        public virtual string PassCode
+        {
+            get => _passCode;
+            internal set => _passCode = value;
         }
 
         /// <summary>
