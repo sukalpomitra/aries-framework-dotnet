@@ -24,6 +24,7 @@ namespace AgentFramework.AspNetCore
             AddConnectionHandler();
             AddCredentialHandler();
             AddProofHandler();
+            AddTrustPingHandler();
         }
     }
 }

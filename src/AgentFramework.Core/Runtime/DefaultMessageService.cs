@@ -110,7 +110,7 @@ namespace AgentFramework.Core.Handlers.Agents
             }
             catch (Exception e)
             {
-                Logger.LogError("Failed to un-pack message", e);
+                //Logger.LogError("Failed to un-pack message", e);
                 throw new AgentFrameworkException(ErrorCode.InvalidMessage, "Failed to un-pack message", e);
             }
 

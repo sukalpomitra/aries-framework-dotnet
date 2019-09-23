@@ -58,8 +58,8 @@ namespace AgentFramework.Core.Handlers
         /// <summary>Adds a handler for supporting default credential flow.</summary>
         protected void AddCredentialHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[1]);
 
-        /// <summary>Adds the handler for supporting default proof flow.</summary>
-        protected void AddTrustPingHandler() => Handlers.Add(Provider.GetRequiredService<DefaultTrustPingMessageHandler>());
+        /// <summary>Adds the handler for supporting default trust ping flow.</summary>
+        protected void AddTrustPingHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[3]);
 
         /// <summary>Adds the handler for supporting default proof flow.</summary>
         protected void AddProofHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[2]);
@@ -158,7 +158,7 @@ namespace AgentFramework.Core.Handlers
             }
             catch(Exception e)
             {
-                Logger.LogError("Failed to un-pack message", e);
+                //Logger.LogError("Failed to un-pack message", e);
                 throw new AgentFrameworkException(ErrorCode.InvalidMessage, "Failed to un-pack message", e);
             }
 
