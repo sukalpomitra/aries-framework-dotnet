@@ -235,61 +235,72 @@ namespace AgentFramework.Core.Handlers.Agents
                 credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
                     SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")), null, 100);
             }
+            bool credentialFound = false;
             if (credentials.Count > 0)
             {
-                var credential = credentials[0];
-                IEnumerable<CredentialAttribute> Attributes = credential.CredentialAttributesValues
-                    .Select(p =>
-                        new CredentialAttribute()
-                        {
-                            Name = p.Name,
-                            Value = p.Value?.ToString(),
-                            Type = "Text"
-                        })
-                    .ToList();
-
                 Dictionary<string, RequestedAttribute> requestedAttributes = new Dictionary<string, RequestedAttribute>();
-                foreach (var item in _requestedAttributesKeys)
+                Dictionary<string, RequestedAttribute> requestedPredicates = new Dictionary<string, RequestedAttribute>();
+                foreach (var credential in credentials)
                 {
-                    bool credentialFound = false;
-                    foreach (var attrib in Attributes)
+                    if (!credentialFound)
                     {
-                        if (_requestedAttributes[item]["name"].ToString() == attrib.Name)
+                        IEnumerable<CredentialAttribute> Attributes = credential.CredentialAttributesValues
+                        .Select(p =>
+                            new CredentialAttribute()
+                            {
+                                Name = p.Name,
+                                Value = p.Value?.ToString(),
+                                Type = "Text"
+                            })
+                        .ToList();
+
+
+                        foreach (var item in _requestedAttributesKeys)
                         {
-                            credentialFound = true;
-                            break;
+                            foreach (var attrib in Attributes)
+                            {
+                                if (_requestedAttributes[item]["name"].ToString() == attrib.Name)
+                                {
+                                    RequestedAttribute requestedAttribute = new RequestedAttribute();
+                                    requestedAttribute.CredentialId = credential.CredentialId;
+                                    requestedAttribute.Revealed = true;
+                                    requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+                                    requestedAttributes.Add(item, requestedAttribute);
+                                    credentialFound = true;
+                                }
+                            }
+                            if (!credentialFound)
+                            {
+                                requestedAttributes.Clear();
+                            }
+                        }
+
+                        foreach (var item in _requestedPredicatesKeys)
+                        {
+                            RequestedAttribute requestedAttribute = new RequestedAttribute();
+                            requestedAttribute.CredentialId = credential.CredentialId;
+                            requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+                            requestedPredicates.Add(item, requestedAttribute);
                         }
                     }
-                    if (credentialFound)
+                }
+
+                if (credentialFound)
+                {
+                    RequestedCredentials requestedCredentials = new RequestedCredentials();
+                    requestedCredentials.RequestedAttributes = requestedAttributes;
+                    requestedCredentials.RequestedPredicates = requestedPredicates;
+                    var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, proof.RequestJson);
+                    var threadId = proof.GetTag(TagConstants.LastThreadId);
+
+                    var proofMsg = new ProofMessage
                     {
-                        RequestedAttribute requestedAttribute = new RequestedAttribute();
-                        requestedAttribute.CredentialId = credential.CredentialId;
-                        requestedAttribute.Revealed = true;
-                        requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
-                        requestedAttributes.Add(item, requestedAttribute);
-                    }
-                }
-                Dictionary<string, RequestedAttribute> requestedPredicates = new Dictionary<string, RequestedAttribute>();
-                foreach (var item in _requestedPredicatesKeys)
-                {
-                    RequestedAttribute requestedAttribute = new RequestedAttribute();
-                    requestedAttribute.CredentialId = credential.CredentialId;
-                    requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
-                    requestedPredicates.Add(item, requestedAttribute);
-                }
-                RequestedCredentials requestedCredentials = new RequestedCredentials();
-                requestedCredentials.RequestedAttributes = requestedAttributes;
-                requestedCredentials.RequestedPredicates = requestedPredicates;
-                var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, proof.RequestJson);
-                var threadId = proof.GetTag(TagConstants.LastThreadId);
+                        ProofJson = proofJson
+                    };
 
-                var proofMsg = new ProofMessage
-                {
-                    ProofJson = proofJson
-                };
-
-                proofMsg.ThreadFrom(threadId);
-                await MessageService.SendAsync(agentContext.Wallet, proofMsg, connection);
+                    proofMsg.ThreadFrom(threadId);
+                    await MessageService.SendAsync(agentContext.Wallet, proofMsg, connection);
+                }
             }
         }
 
