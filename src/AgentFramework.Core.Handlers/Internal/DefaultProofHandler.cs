@@ -41,7 +41,7 @@ namespace AgentFramework.Core.Handlers.Internal
             {
                 case MessageTypes.ProofRequest:
                     var request = messageContext.GetMessage<ProofRequestMessage>();
-                    await _proofService.ProcessProofRequestAsync(agentContext, request, messageContext.Connection);
+                    await _proofService.ProcessProofRequestAsync(agentContext, request, messageContext.Connection, false);
                     break;
 
                 case MessageTypes.DisclosedProof:

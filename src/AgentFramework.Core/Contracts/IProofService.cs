@@ -42,8 +42,9 @@ namespace AgentFramework.Core.Contracts
         /// <param name="agentContext">Agent Context.</param>
         /// <param name="proofRequest">A proof request.</param>
         /// <param name="connection">Connection.</param>
+        /// <param name="isVcOidc">if this proof request is for vc oidc flow.</param>
         /// <returns>Proof identifier.</returns>
-        Task<string> ProcessProofRequestAsync(IAgentContext agentContext, ProofRequestMessage proofRequest, ConnectionRecord connection);
+        Task<string> ProcessProofRequestAsync(IAgentContext agentContext, ProofRequestMessage proofRequest, ConnectionRecord connection, bool isVcOidc);
 
         /// <summary>
         /// Processes a proof and stores it for a given connection.

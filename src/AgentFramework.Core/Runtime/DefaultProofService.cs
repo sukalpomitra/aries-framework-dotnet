@@ -7,6 +7,7 @@ using AgentFramework.Core.Decorators.Threading;
 using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Extensions;
 using AgentFramework.Core.Messages.Proofs;
+using AgentFramework.Core.Models;
 using AgentFramework.Core.Models.Credentials;
 using AgentFramework.Core.Models.Events;
 using AgentFramework.Core.Models.Proofs;
@@ -18,6 +19,7 @@ using Hyperledger.Indy.PoolApi;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Osma.Mobile.App.ViewModels.Credentials;
 
 namespace AgentFramework.Core.Handlers.Agents
 {
@@ -168,22 +170,23 @@ namespace AgentFramework.Core.Handlers.Agents
 
         /// <inheritdoc />
         public virtual async Task<string> ProcessProofRequestAsync(IAgentContext agentContext,
-            ProofRequestMessage proofRequest, ConnectionRecord connection)
+            ProofRequestMessage proofRequest, ConnectionRecord connection, bool isVcOidc)
         {
             var requestJson = proofRequest.ProofRequestJson;
 
+            
             // Write offer record to local wallet
             var proofRecord = new ProofRecord
             {
                 Id = Guid.NewGuid().ToString(),
                 RequestJson = requestJson,
-                ConnectionId = connection.Id,
+                ConnectionId = isVcOidc ? null : connection.Id,
                 State = ProofState.Requested
             };
             proofRecord.SetTag(TagConstants.LastThreadId, proofRequest.GetThreadId());
             proofRecord.SetTag(TagConstants.Role, TagConstants.Holder);
 
-            if (!connection.Sso)
+            if (!connection.Sso && !isVcOidc)
             {
                 await RecordService.AddAsync(agentContext.Wallet, proofRecord);
 
@@ -195,34 +198,76 @@ namespace AgentFramework.Core.Handlers.Agents
                 });
             } else
             {
-                await SelectCredentialsForProofAsync(agentContext, proofRecord);
+                if (isVcOidc)
+                {
+                    connection.Endpoint = new AgentEndpoint { Uri = proofRequest.ServiceDecorator.ServiceEndpoint?.ToString() };
+                }
+                await SelectCredentialsForProofAsync(agentContext, proofRecord, connection);
             }
 
             return proofRecord.Id;
         }
 
-        private async Task SelectCredentialsForProofAsync(IAgentContext agentContext, ProofRecord proof)
+        private async Task SelectCredentialsForProofAsync(IAgentContext agentContext, ProofRecord proof, ConnectionRecord connection)
         {
             var requestJson = (JObject)JsonConvert.DeserializeObject(proof.RequestJson);
             JObject _requestedAttributes = (JObject)requestJson["requested_attributes"];
             JObject _requestedPredicates = (JObject)requestJson["requested_predicates"];
             IList<string> _requestedAttributesKeys = _requestedAttributes?.Properties().Select(p => p.Name).ToList();
             IList<string> _requestedPredicatesKeys = _requestedPredicates?.Properties().Select(p => p.Name).ToList();
-            var cred_def_id = _requestedAttributes[_requestedAttributesKeys[0]]["restrictions"][0]["cred_def_id"];
-            var credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
-                SearchQuery.And(SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")),
-                SearchQuery.Equal(nameof(CredentialRecord.CredentialDefinitionId), cred_def_id.ToString())), null, 100);
+            JToken cred_def_id = null;
+            try
+            {
+                cred_def_id = _requestedAttributes[_requestedAttributesKeys[0]]["restrictions"][0]["cred_def_id"];
+            }
+            catch (Exception)
+            {
+                cred_def_id = null;
+            }
+            var credentials = new List<CredentialRecord>();
+            if (cred_def_id != null)
+            {
+                credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
+                    SearchQuery.And(SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")),
+                    SearchQuery.Equal(nameof(CredentialRecord.CredentialDefinitionId), cred_def_id.ToString())), null, 100);
+            } else
+            {
+                credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
+                    SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")), null, 100);
+            }
             if (credentials.Count > 0)
             {
                 var credential = credentials[0];
+                IEnumerable<CredentialAttribute> Attributes = credential.CredentialAttributesValues
+                    .Select(p =>
+                        new CredentialAttribute()
+                        {
+                            Name = p.Name,
+                            Value = p.Value?.ToString(),
+                            Type = "Text"
+                        })
+                    .ToList();
+
                 Dictionary<string, RequestedAttribute> requestedAttributes = new Dictionary<string, RequestedAttribute>();
                 foreach (var item in _requestedAttributesKeys)
                 {
-                    RequestedAttribute requestedAttribute = new RequestedAttribute();
-                    requestedAttribute.CredentialId = credential.CredentialId;
-                    requestedAttribute.Revealed = true;
-                    requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
-                    requestedAttributes.Add(item, requestedAttribute);
+                    bool credentialFound = false;
+                    foreach (var attrib in Attributes)
+                    {
+                        if (_requestedAttributes[item]["name"].ToString() == attrib.Name)
+                        {
+                            credentialFound = true;
+                            break;
+                        }
+                    }
+                    if (credentialFound)
+                    {
+                        RequestedAttribute requestedAttribute = new RequestedAttribute();
+                        requestedAttribute.CredentialId = credential.CredentialId;
+                        requestedAttribute.Revealed = true;
+                        requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+                        requestedAttributes.Add(item, requestedAttribute);
+                    }
                 }
                 Dictionary<string, RequestedAttribute> requestedPredicates = new Dictionary<string, RequestedAttribute>();
                 foreach (var item in _requestedPredicatesKeys)
@@ -244,7 +289,6 @@ namespace AgentFramework.Core.Handlers.Agents
                 };
 
                 proofMsg.ThreadFrom(threadId);
-                var connection = await ConnectionService.GetAsync(agentContext, proof.ConnectionId);
                 await MessageService.SendAsync(agentContext.Wallet, proofMsg, connection);
             }
         }
@@ -261,6 +305,12 @@ namespace AgentFramework.Core.Handlers.Agents
                     $"Proof state was invalid. Expected '{ProofState.Requested}', found '{record.State}'");
 
             var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, record.RequestJson);
+            if (proofJson.Contains("\"rev_reg_id\":null"))
+            {
+                String[] separator = { "\"rev_reg_id\":null" };
+                String[] proofJsonList = proofJson.Split(separator, StringSplitOptions.None);
+                proofJson = proofJsonList[0] + "\"rev_reg_id\":null,\"timestamp\":null}]}";
+            }
             record.ProofJson = proofJson;
             await record.TriggerAsync(ProofTrigger.Accept);
             await RecordService.UpdateAsync(agentContext.Wallet, record);
