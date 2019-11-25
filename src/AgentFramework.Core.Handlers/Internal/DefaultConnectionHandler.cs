@@ -60,6 +60,8 @@ namespace AgentFramework.Core.Handlers.Internal
                 {
                     var request = messageContext.GetMessage<ConnectionRequestMessage>();
                     var connectionId = await _connectionService.ProcessRequestAsync(agentContext, request, messageContext.Connection);
+                    messageContext.ContextRecord = messageContext.Connection;
+                    
                     // Auto accept connection if set during invitation
                     if (messageContext.Connection.GetTag(TagConstants.AutoAcceptConnection) == "true")
                     {
@@ -80,6 +82,7 @@ namespace AgentFramework.Core.Handlers.Internal
                         HttpClient httpClient = new HttpClient();
                         await httpClient.GetAsync(new System.Uri(endpoint));
                     }
+                    messageContext.ContextRecord = messageContext.Connection;
                     return null;
                 }
                 default:
