@@ -1,33 +1,34 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using AgentFramework.Core.Configuration.Options;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Exceptions;
-using AgentFramework.Core.Models;
 using AgentFramework.Core.Models.Wallets;
 using Hyperledger.Indy.PoolApi;
 using Hyperledger.Indy.WalletApi;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace AgentFramework.AspNetCore
+namespace AgentFramework.Core.Handlers.Hosting
 {
+    /// <inheritdoc />
     /// <summary>
     /// Agent hosted service.
     /// </summary>
-    public class AgentHostedService : IHostedService
+    public class ProvisioningHostedService : IHostedService
     {
         private readonly IProvisioningService _provisioningService;
         private readonly IPoolService _poolService;
         private readonly PoolOptions _poolOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:AgentFramework.AspNetCore.AgentHostedService"/> class.
+        /// Initializes a new instance of the <see cref="T:AgentFramework.AspNetCore.Hosting.AgentHostedService"/> class.
         /// </summary>
         /// <param name="provisioningService">Provisioning service.</param>
         /// <param name="provisioningConfiguration">Provisioning configuration.</param>
         /// <param name="poolService">Pool service.</param>
         /// <param name="poolOptions">Pool options.</param>
-        public AgentHostedService(
+        public ProvisioningHostedService(
             ProvisioningConfiguration provisioningConfiguration,
             IProvisioningService provisioningService,
             IPoolService poolService,
@@ -45,6 +46,7 @@ namespace AgentFramework.AspNetCore
         /// <value>The provisioning configuration.</value>
         public ProvisioningConfiguration ProvisioningConfiguration { get; }
 
+        /// <inheritdoc />
         /// <summary>
         /// Triggered when the application host is ready to start the service.
         /// </summary>
@@ -81,6 +83,7 @@ namespace AgentFramework.AspNetCore
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Triggered when the application host is performing a graceful shutdown.
         /// </summary>

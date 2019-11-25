@@ -14,7 +14,6 @@ using AgentFramework.Core.Models.Connections;
 using AgentFramework.Core.Models.Credentials;
 using AgentFramework.Core.Models.Events;
 using AgentFramework.Core.Models.Records;
-using AgentFramework.Core.Handlers.Agents;
 using AgentFramework.TestHarness;
 using AgentFramework.TestHarness.Utils;
 using Hyperledger.Indy.AnonCredsApi;
@@ -23,6 +22,7 @@ using Hyperledger.Indy.WalletApi;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using AgentFramework.Core.Runtime;
 
 namespace AgentFramework.Core.Tests.Protocols
 {
@@ -50,9 +50,14 @@ namespace AgentFramework.Core.Tests.Protocols
             _eventAggregator = new EventAggregator();
 
             var provisioning = ServiceUtils.GetDefaultMockProvisioningService();
+            var paymentService = new DefaultPaymentService();
 
-            var tailsService = new DefaultTailsService(ledgerService, new HttpClientHandler());
-            _schemaService = new DefaultSchemaService(provisioning, recordService, ledgerService, tailsService);
+            var clientFactory = new Mock<IHttpClientFactory>();
+            clientFactory.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+
+            var tailsService = new DefaultTailsService(ledgerService, clientFactory.Object);
+            _schemaService = new DefaultSchemaService(provisioning, recordService, ledgerService,paymentService, tailsService);
 
             _connectionService = new DefaultConnectionService(
                 _eventAggregator,
@@ -68,6 +73,7 @@ namespace AgentFramework.Core.Tests.Protocols
                 _schemaService,
                 tailsService,
                 provisioning,
+                paymentService,
                 new Mock<ILogger<DefaultCredentialService>>().Object);
         }
 

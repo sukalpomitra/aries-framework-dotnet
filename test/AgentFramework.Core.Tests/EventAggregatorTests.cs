@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reactive.Linq;
-using AgentFramework.Core.Handlers.Agents;
+using AgentFramework.Core.Runtime;
 using Xunit;
 
 namespace AgentFramework.Core.Tests

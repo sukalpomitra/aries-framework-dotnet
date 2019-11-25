@@ -3,6 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+.DS_Store
+
 # User-specific files
 *.suo
 *.user
@@ -332,3 +334,6 @@ ASALocalRun/
 # ReadTheDocs build directory
 
 docs/_build
+
+# vs code config
+.vscode/

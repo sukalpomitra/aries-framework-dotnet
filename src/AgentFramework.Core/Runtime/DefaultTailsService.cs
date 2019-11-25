@@ -11,7 +11,7 @@ using Hyperledger.Indy.BlobStorageApi;
 using Hyperledger.Indy.PoolApi;
 using Newtonsoft.Json.Linq;
 
-namespace AgentFramework.Core.Handlers.Agents
+namespace AgentFramework.Core.Runtime
 {
     /// <inheritdoc />
     public class DefaultTailsService : ITailsService
@@ -30,13 +30,13 @@ namespace AgentFramework.Core.Handlers.Agents
 
         /// <summary>Initializes a new instance of the <see cref="DefaultTailsService"/> class.</summary>
         /// <param name="ledgerService">The ledger service.</param>
-        /// <param name="httpMessageHandler">The HTTP message handler.</param>
+        /// <param name="httpClientFactory"></param>
         public DefaultTailsService(
             ILedgerService ledgerService, 
-            HttpMessageHandler httpMessageHandler)
+            IHttpClientFactory httpClientFactory)
         {
             LedgerService = ledgerService;
-            HttpClient = new HttpClient(httpMessageHandler);
+            HttpClient = httpClientFactory.CreateClient();
         }
 
         /// <inheritdoc />

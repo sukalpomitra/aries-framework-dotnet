@@ -1,11 +1,11 @@
 ﻿using AgentFramework.Core.Contracts;
-using AgentFramework.Core.Handlers.Agents;
 using AgentFramework.TestHarness.Utils;
 using Hyperledger.Indy.WalletApi;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Threading.Tasks;
+using AgentFramework.Core.Runtime;
 using Xunit;
 
 namespace AgentFramework.Core.Tests.Protocols

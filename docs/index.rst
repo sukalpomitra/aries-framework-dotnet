@@ -18,6 +18,7 @@ The framework runs on any .NET Standard target, including ASP.NET Core and Xamar
     :caption: Framework Model
 
     quickstart
+    payments
     
 .. toctree::
     :maxdepth: 2
@@ -30,5 +31,12 @@ The framework runs on any .NET Standard target, including ASP.NET Core and Xamar
 .. toctree::
     :maxdepth: 2
     :caption: Example Agents
-
+    
+    gettingstarted
     samples
+    
+.. toctree::
+    :maxdepth: 2
+    :caption: Common Errors
+
+    errors

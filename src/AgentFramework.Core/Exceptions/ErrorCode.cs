@@ -42,6 +42,13 @@
         /// <summary>
         /// The Cloud agent is already registered
         /// </summary>
-        CloudAgentAlreadyRegistered
+        CloudAgentAlreadyRegistered,
+        /// Record has invalid or missing data
+        /// </summary>
+        InvalidRecordData,
+        /// <summary>
+        /// Insufficient funds at the specified address
+        /// </summary>
+        PaymentInsufficientFunds
     }
 }
