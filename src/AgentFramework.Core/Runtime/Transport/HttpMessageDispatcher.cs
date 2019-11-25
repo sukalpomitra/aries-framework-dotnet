@@ -1,10 +1,15 @@
 ﻿using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Messages;
+using AgentFramework.Core.Runtime.Responses;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace AgentFramework.Core.Runtime.Transport
 {
@@ -62,6 +67,27 @@ namespace AgentFramework.Core.Runtime.Transport
             }
 
             return null;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<MessageContext>> ConsumeAsync(Uri endpointUri)
+        {
+            var response = await HttpClient.GetAsync(endpointUri);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new AgentFrameworkException(
+                    ErrorCode.A2AMessageTransmissionError, $"Failed to consume A2A message with an HTTP status code of {response.StatusCode} and content {responseBody}");
+            }
+
+            var messages = JsonConvert.DeserializeObject<List<CloudAgentResponse>>(responseBody);
+            List<MessageContext> messageContexts = new List<MessageContext>();
+
+            foreach (var message in messages)
+            {
+                messageContexts.Add(new MessageContext(message.message, message.packed));
+            }
+            return messageContexts;
         }
     }
 }

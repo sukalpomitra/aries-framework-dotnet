@@ -40,6 +40,9 @@
         /// </summary>
         InvalidParameterFormat,
         /// <summary>
+        /// The Cloud agent is already registered
+        /// </summary>
+        CloudAgentAlreadyRegistered,
         /// Record has invalid or missing data
         /// </summary>
         InvalidRecordData,

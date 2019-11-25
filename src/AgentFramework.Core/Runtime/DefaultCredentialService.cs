@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Decorators.Threading;
@@ -129,7 +130,8 @@ namespace AgentFramework.Core.Runtime
                 CredentialDefinitionId = definitionId,
                 CredentialAttributesValues = credentialOffer.Preview?.Attributes,
                 SchemaId = schemaId,
-                State = CredentialState.Offered
+                Name = (schemaId.Split(':')[2]).Replace(" schema", "") + " - " + (schemaId.Split(':')[3]),
+            State = CredentialState.Offered
             };
             credentialRecord.SetTag(TagConstants.Role, TagConstants.Holder);
             credentialRecord.SetTag(TagConstants.LastThreadId, credentialOffer.GetThreadId());
@@ -147,7 +149,7 @@ namespace AgentFramework.Core.Runtime
         }
 
         /// <inheritdoc />
-        public virtual async Task<(CredentialRequestMessage, CredentialRecord)> CreateCredentialRequestAsync(
+        public virtual async Task<(CredentialRequestMessage, ConnectionRecord)> CreateCredentialRequestAsync(
             IAgentContext agentContext, string offerId)
         {
             var credential = await GetAsync(agentContext, offerId);
@@ -180,7 +182,7 @@ namespace AgentFramework.Core.Runtime
 
             response.ThreadFrom(threadId);
 
-            return (response, credential);
+            return (response, connection);
         }
 
         /// <inheritdoc />
@@ -202,6 +204,10 @@ namespace AgentFramework.Core.Runtime
             var offer = JObject.Parse(credential.CredentialJson);
             var definitionId = offer["cred_def_id"].ToObject<string>();
             var revRegId = offer["rev_reg_id"]?.ToObject<string>();
+            JObject values = (JObject)offer["values"];
+            IList<string> keys = values.Properties().Select(p => p.Name).ToList();
+
+            var attributes = keys.Select(k => new CredentialPreviewAttribute() { Name = k, Value = values[k]["raw"]?.ToString() }).ToList();
 
             var credentialRecord = await this.GetByThreadIdAsync(agentContext, credential.GetThreadId());
 
@@ -209,9 +215,11 @@ namespace AgentFramework.Core.Runtime
                 throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Credential state was invalid. Expected '{CredentialState.Requested}', found '{credentialRecord.State}'");
 
+           
             var credentialDefinition = await LedgerService.LookupDefinitionAsync(await agentContext.Pool, definitionId);
 
             string revocationRegistryDefinitionJson = null;
+
             if (!string.IsNullOrEmpty(revRegId))
             {
                 // If credential supports revocation, lookup registry definition
@@ -225,7 +233,7 @@ namespace AgentFramework.Core.Runtime
                 credential.CredentialJson, credentialDefinition.ObjectJson, revocationRegistryDefinitionJson);
 
             credentialRecord.CredentialId = credentialId;
-            credentialRecord.CredentialAttributesValues = null;
+            credentialRecord.CredentialAttributesValues = attributes;
 
             await credentialRecord.TriggerAsync(CredentialTrigger.Issue);
             await RecordService.UpdateAsync(agentContext.Wallet, credentialRecord);

@@ -38,8 +38,14 @@ namespace AgentFramework.Core.Runtime
         public virtual async Task CreatePoolAsync(string poolName, string genesisFile)
         {
             var poolConfig = new {genesis_txn = genesisFile}.ToJson();
-
-            await Pool.CreatePoolLedgerConfigAsync(poolName, poolConfig);
+            try
+            {
+                await Pool.CreatePoolLedgerConfigAsync(poolName, poolConfig);
+            } catch(PoolLedgerConfigExistsException ex)
+            {
+                await Pool.DeletePoolLedgerConfigAsync(poolName);
+                await Pool.CreatePoolLedgerConfigAsync(poolName, poolConfig);
+            }
         }
     }
 }

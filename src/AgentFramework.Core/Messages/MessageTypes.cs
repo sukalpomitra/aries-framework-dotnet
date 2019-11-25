@@ -8,6 +8,11 @@
         /// <summary>
         /// The connection invitation.
         /// </summary>
+        public const string CloudAgentRegistration = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/didexchange/1.0/cloudagentregistration";
+
+        /// <summary>
+        /// The connection invitation.
+        /// </summary>
         public const string ConnectionInvitation = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation";
 
         /// <summary>

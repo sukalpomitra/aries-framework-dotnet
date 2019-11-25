@@ -55,9 +55,10 @@ namespace AgentFramework.Core.Contracts
         /// </summary>
         /// <param name="agentContext">Agent Context.</param>
         /// <param name="offer">Offer.</param>
+        /// <param name="responseEndpoint">Offer.</param>
         /// <exception cref="AgentFrameworkException">Throws with ErrorCode.A2AMessageTransmissionError.</exception>
         /// <returns>Connection identifier unique for this connection.</returns>
-        Task<(ConnectionRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, ConnectionInvitationMessage offer);
+        Task<(ConnectionRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, ConnectionInvitationMessage offer, string responseEndpoint = "");
 
         /// <summary>
         /// Process the connection request for a given connection async.

@@ -1,4 +1,5 @@
 ﻿using System;
+using AgentFramework.Core.Decorators.Service;
 using Newtonsoft.Json;
 
 namespace AgentFramework.Core.Messages.Proofs
@@ -32,6 +33,15 @@ namespace AgentFramework.Core.Messages.Proofs
         /// </value>
         [JsonProperty("request")]
         public string ProofRequestJson { get; set; }
+
+        /// <summary>
+        /// Gets or sets the service decorator.
+        /// </summary>
+        /// <value>
+        /// The service decorator.
+        /// </value>
+        [JsonProperty("~service", NullValueHandling = NullValueHandling.Ignore)]
+        public ServiceDecorator ServiceDecorator { get; set; }
 
         /// <inheritdoc />
         public override string ToString() =>

@@ -85,6 +85,16 @@ namespace AgentFramework.Core.Models.Records
         }
 
         /// <summary>
+        /// Gets or sets the credential name.
+        /// </summary>
+        /// <value>The name.</value>
+        public string Name
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets or sets the credential revocation identifier.
         /// This field is only present in the issuer wallet.
         /// </summary>

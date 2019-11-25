@@ -20,7 +20,9 @@ namespace AgentFramework.Core.Runtime
     {
         /// <summary>The agent wire message MIME type</summary>
         public const string AgentWireMessageMimeType = "application/ssi-agent-wire";
-        
+
+        private readonly ICloudAgentRegistrationService _registrationService;
+
         /// <summary>The logger</summary>
         // ReSharper disable InconsistentNaming
         protected readonly ILogger<DefaultMessageService> Logger;
@@ -34,10 +36,12 @@ namespace AgentFramework.Core.Runtime
         /// <param name="messageDispatchers">The message handler.</param>
         public DefaultMessageService(
             ILogger<DefaultMessageService> logger, 
-            IEnumerable<IMessageDispatcher> messageDispatchers)
+            IEnumerable<IMessageDispatcher> messageDispatchers,
+            ICloudAgentRegistrationService agentRegistrationService)
         {
             Logger = logger;
             MessageDispatchers = messageDispatchers;
+            _registrationService = agentRegistrationService;
         }
 
         /// <inheritdoc />
@@ -78,7 +82,22 @@ namespace AgentFramework.Core.Runtime
 
             return msg;
         }
-        
+
+        /// <inheritdoc />
+        public virtual async Task<(byte[], string)> PrepareRouteAsync(Wallet wallet, byte[] message, string endpointUri)
+        {
+            var records = await _registrationService.GetAllCloudAgentAsync(wallet);
+            int counter = 0;
+            while (records.Count > 0)
+            {
+                counter++;
+                var record = _registrationService.getRandomCloudAgent(records);
+                message = await CryptoUtils.PackAsync(wallet, record.TheirVk, new ForwardMessage { Message = message.GetUTF8String(), To = endpointUri });
+                endpointUri = record.Endpoint.ServiceEndpoint;
+            }
+            return (message, endpointUri);
+        }
+
         private async Task<MessageContext> UnpackAsync(Wallet wallet, MessageContext message, ConnectionRecord connection)
         {
             UnpackResult unpacked;
@@ -89,7 +108,7 @@ namespace AgentFramework.Core.Runtime
             }
             catch (Exception e)
             {
-                Logger.LogError("Failed to un-pack message", e);
+                //Logger.LogError("Failed to un-pack message", e);
                 throw new AgentFrameworkException(ErrorCode.InvalidMessage, "Failed to un-pack message", e);
             }
 
@@ -137,19 +156,39 @@ namespace AgentFramework.Core.Runtime
             if (string.IsNullOrEmpty(endpointUri))
                 throw new ArgumentNullException(nameof(endpointUri));
 
-            var uri = new Uri(endpointUri);
+            if (requestResponse)
+                message.AddReturnRouting();
+
+            var wireMsg = await PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
+            var (msg, serviceEndpoint) = await PrepareRouteAsync(wallet, wireMsg, endpointUri);
+            var uri = new Uri(serviceEndpoint);
 
             var dispatcher = GetDispatcher(uri.Scheme);
 
             if (dispatcher == null)
                 throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
 
-            if (requestResponse)
-                message.AddReturnRouting();
+            return await dispatcher.DispatchAsync(uri, new MessageContext(msg, true));
+        }
 
-            var wireMsg = await PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
+        /// <inheritdoc />
+        public virtual async Task<List<MessageContext>> ConsumeAsync(Wallet wallet)
+        {
+            var records = await _registrationService.GetAllCloudAgentAsync(wallet);
+            List<MessageContext> messages = new List<MessageContext>();
+            foreach (var record in records)
+            {
+                var uri = new Uri(record.Endpoint.ConsumerEndpoint + "/" + record.MyConsumerId);
 
-            return await dispatcher.DispatchAsync(uri, new MessageContext(wireMsg, true));
+                var dispatcher = GetDispatcher(uri.Scheme);
+
+                if (dispatcher == null)
+                    throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
+
+                var messageContexts = await dispatcher.ConsumeAsync(uri);
+                messages.AddRange(messageContexts);
+            }
+            return messages;
         }
 
         private IMessageDispatcher GetDispatcher(string scheme) => MessageDispatchers.FirstOrDefault(_ => _.TransportSchemes.Contains(scheme));

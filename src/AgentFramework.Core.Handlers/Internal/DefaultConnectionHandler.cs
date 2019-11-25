@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Exceptions;
@@ -8,7 +10,7 @@ using AgentFramework.Core.Utils;
 
 namespace AgentFramework.Core.Handlers.Internal
 {
-    internal class DefaultConnectionHandler : IMessageHandler
+    public class DefaultConnectionHandler : IMessageHandler
     {
         private readonly IConnectionService _connectionService;
         private readonly IMessageService _messageService;
@@ -71,6 +73,13 @@ namespace AgentFramework.Core.Handlers.Internal
                 {
                     var response = messageContext.GetMessage<ConnectionResponseMessage>();
                     await _connectionService.ProcessResponseAsync(agentContext, response, messageContext.Connection);
+                    if (messageContext.Connection.Sso)
+                    {
+                        var endpoint = messageContext.Connection.Endpoint.Uri.Replace("response", "trigger/")
+                                + messageContext.Connection.MyDid + "/" + messageContext.Connection.InvitationKey;
+                        HttpClient httpClient = new HttpClient();
+                        await httpClient.GetAsync(new System.Uri(endpoint));
+                    }
                     return null;
                 }
                 default:

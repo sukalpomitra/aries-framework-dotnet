@@ -25,7 +25,11 @@ Download static libraries
 - Our repo (includes `libgnustl_shared.so`) - `samples/xamarin/libs-android`_ 
 - Sovrin repo - https://repo.sovrin.org/android/libindy/
 
+<<<<<<< HEAD
 .. _`samples/xamarin/libs-android`: https://github.com/hyperledger/aries-framework-dotnet/tree/master/samples/xamarin/libs-android>
+=======
+.. _`samples/xamarin/libs-android`: https://github.com/streetcred-id/agent-framework/tree/master/samples/xamarin/libs-android>
+>>>>>>> agent/poc
 
 For Android the entire library and its dependencies are compiled into a single shared object (libindy.so). In order for ``libindy.so`` to be executable we must also include ``libgnustl_shared.so``.
 
@@ -117,7 +121,11 @@ Pre-built libraries
 ```````````````````
 
 Can be found in the `iOS sample project
+<<<<<<< HEAD
 <https://github.com/hyperledger/aries-framework-dotnet/tree/master/samples/xamarin/libs-ios>`_.
+=======
+<https://github.com/streetcred-id/agent-framework/tree/master/samples/xamarin/libs-ios>`_.
+>>>>>>> agent/poc
 
 Build your own libs
 ```````````````````

@@ -58,16 +58,16 @@ namespace AgentFramework.Core.Handlers.Agents
         }
 
         /// <summary>Adds a handler for supporting default connection flow.</summary>
-        protected void AddConnectionHandler() => Handlers.Add(Provider.GetRequiredService<DefaultConnectionHandler>());
+        protected void AddConnectionHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[0]);
 
         /// <summary>Adds a handler for supporting default credential flow.</summary>
-        protected void AddCredentialHandler() => Handlers.Add(Provider.GetRequiredService<DefaultCredentialHandler>());
+        protected void AddCredentialHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[1]);
+
+        /// <summary>Adds the handler for supporting default trust ping flow.</summary>
+        protected void AddTrustPingHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[3]);
 
         /// <summary>Adds the handler for supporting default proof flow.</summary>
-        protected void AddTrustPingHandler() => Handlers.Add(Provider.GetRequiredService<DefaultTrustPingMessageHandler>());
-
-        /// <summary>Adds the handler for supporting default proof flow.</summary>
-        protected void AddProofHandler() => Handlers.Add(Provider.GetRequiredService<DefaultProofHandler>());
+        protected void AddProofHandler() => Handlers.Add(Provider.GetServices<IMessageHandler>().ToList()[2]);
 
         /// <summary>Adds a default forwarding handler.</summary>
         protected void AddForwardHandler() => Handlers.Add(Provider.GetRequiredService<DefaultForwardHandler>());

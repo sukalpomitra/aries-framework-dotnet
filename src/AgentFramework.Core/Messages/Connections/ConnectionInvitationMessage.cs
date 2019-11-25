@@ -61,6 +61,24 @@ namespace AgentFramework.Core.Messages.Connections
         [JsonProperty("recipientKeys")]
         public IList<string> RecipientKeys { get; set; }
 
+        /// <summary>
+        /// Gets or sets the sso param.
+        /// </summary>
+        /// <value>
+        /// The recipient keys.
+        /// </value>
+        [JsonProperty("sso")]
+        public bool Sso { get; set; }
+
+        /// <summary>
+        /// Gets or sets the invitation key param.
+        /// </summary>
+        /// <value>
+        /// The invitation key.
+        /// </value>
+        [JsonProperty("invitationKey")]
+        public string InvitationKey { get; set; }
+
         /// <inheritdoc />
         public override string ToString() =>
             $"{GetType().Name}: " +
@@ -68,6 +86,8 @@ namespace AgentFramework.Core.Messages.Connections
             $"Type={Type}, " +
             $"Name={Label}, " +
             $"ImageUrl={ImageUrl}, " +
+            $"Sso={Sso}, " +
+            $"InvitationKey={InvitationKey}, " +
             $"RoutingKeys={string.Join(",", RoutingKeys ?? new string[0])}, ";
     }
 }

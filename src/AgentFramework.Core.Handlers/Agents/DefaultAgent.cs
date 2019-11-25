@@ -21,7 +21,10 @@ namespace AgentFramework.Core.Handlers.Agents
         protected override void ConfigureHandlers()
         {
             AddConnectionHandler();
-            AddForwardHandler();
+            //AddForwardHandler();
+            AddCredentialHandler();
+            AddProofHandler();
+            AddTrustPingHandler();
         }
     }
 }

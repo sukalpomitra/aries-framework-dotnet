@@ -50,7 +50,7 @@ namespace AgentFramework.Core.Contracts
         /// <exception cref="AgentFrameworkException">Throws with ErrorCode.RecordInInvalidState.</exception>
         /// <exception cref="AgentFrameworkException">Throws with ErrorCode.A2AMessageTransmissionError.</exception>
         /// <returns>The response async.</returns>
-        Task<(CredentialRequestMessage, CredentialRecord)> CreateCredentialRequestAsync(IAgentContext agentContext, string offerId);
+        Task<(CredentialRequestMessage, ConnectionRecord)> CreateCredentialRequestAsync(IAgentContext agentContext, string offerId);
 
         /// <summary>
         /// Rejects a credential offer asynchronous.

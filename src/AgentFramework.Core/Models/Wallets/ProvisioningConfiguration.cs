@@ -25,6 +25,14 @@ namespace AgentFramework.Core.Models.Wallets
         public string OwnerName { get; set; }
 
         /// <summary>
+        /// Gets or sets the passcode of the agent
+        /// </summary>
+        /// <value>
+        /// The agent passcode
+        /// </value>
+        public string PassCode { get; set; }
+
+        /// <summary>
         /// Gets or sets the imageUrl of the owner of the agent
         /// </summary>
         /// <value>

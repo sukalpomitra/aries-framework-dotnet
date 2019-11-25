@@ -7,6 +7,7 @@ using AgentFramework.Core.Decorators.Threading;
 using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Extensions;
 using AgentFramework.Core.Messages.Proofs;
+using AgentFramework.Core.Models;
 using AgentFramework.Core.Models.Credentials;
 using AgentFramework.Core.Models.Events;
 using AgentFramework.Core.Models.Proofs;
@@ -18,6 +19,7 @@ using Hyperledger.Indy.PoolApi;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Osma.Mobile.App.ViewModels.Credentials;
 
 namespace AgentFramework.Core.Runtime
 {
@@ -63,6 +65,11 @@ namespace AgentFramework.Core.Runtime
         protected readonly ITailsService TailsService;
 
         /// <summary>
+        /// The messageservice service
+        /// </summary>
+        protected readonly IMessageService MessageService;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DefaultProofService"/> class.
         /// </summary>
         /// <param name="eventAggregator">The event aggregator.</param>
@@ -71,6 +78,7 @@ namespace AgentFramework.Core.Runtime
         /// <param name="provisioningService">The provisioning service.</param>
         /// <param name="ledgerService">The ledger service.</param>
         /// <param name="tailsService">The tails service.</param>
+        /// <param name="messageService">The message service.</param>
         /// <param name="logger">The logger.</param>
         public DefaultProofService(
             IEventAggregator eventAggregator,
@@ -79,10 +87,12 @@ namespace AgentFramework.Core.Runtime
             IProvisioningService provisioningService,
             ILedgerService ledgerService,
             ITailsService tailsService,
+            IMessageService messageService,
             ILogger<DefaultProofService> logger)
         {
             EventAggregator = eventAggregator;
             TailsService = tailsService;
+            MessageService = messageService;
             ConnectionService = connectionService;
             RecordService = recordService;
             ProvisioningService = provisioningService;
@@ -160,43 +170,177 @@ namespace AgentFramework.Core.Runtime
 
         /// <inheritdoc />
         public virtual async Task<string> ProcessProofRequestAsync(IAgentContext agentContext,
-            ProofRequestMessage proofRequest, ConnectionRecord connection)
+            ProofRequestMessage proofRequest, ConnectionRecord connection, bool isVcOidc)
         {
             var requestJson = proofRequest.ProofRequestJson;
 
+            
             // Write offer record to local wallet
             var proofRecord = new ProofRecord
             {
                 Id = Guid.NewGuid().ToString(),
                 RequestJson = requestJson,
-                ConnectionId = connection.Id,
+                ConnectionId = isVcOidc ? null : connection.Id,
                 State = ProofState.Requested
             };
             proofRecord.SetTag(TagConstants.LastThreadId, proofRequest.GetThreadId());
             proofRecord.SetTag(TagConstants.Role, TagConstants.Holder);
 
-            await RecordService.AddAsync(agentContext.Wallet, proofRecord);
-
-            EventAggregator.Publish(new ServiceMessageProcessingEvent
+            if (!connection.Sso && !isVcOidc)
             {
-                RecordId = proofRecord.Id,
-                MessageType = proofRequest.Type,
-                ThreadId = proofRequest.GetThreadId()
-            });
+                await RecordService.AddAsync(agentContext.Wallet, proofRecord);
+
+                EventAggregator.Publish(new ServiceMessageProcessingEvent
+                {
+                    RecordId = proofRecord.Id,
+                    MessageType = proofRequest.Type,
+                    ThreadId = proofRequest.GetThreadId()
+                });
+            } else
+            {
+                if (isVcOidc)
+                {
+                    connection.Endpoint = new AgentEndpoint { Uri = proofRequest.ServiceDecorator.ServiceEndpoint?.ToString() };
+                }
+                await SelectCredentialsForProofAsync(agentContext, proofRecord, connection);
+            }
 
             return proofRecord.Id;
         }
 
+        private async Task SelectCredentialsForProofAsync(IAgentContext agentContext, ProofRecord proof, ConnectionRecord connection)
+        {
+            var requestJson = (JObject)JsonConvert.DeserializeObject(proof.RequestJson);
+            JObject _requestedAttributes = (JObject)requestJson["requested_attributes"];
+            JObject _requestedPredicates = (JObject)requestJson["requested_predicates"];
+            IList<string> _requestedAttributesKeys = _requestedAttributes?.Properties().Select(p => p.Name).ToList();
+            IList<string> _requestedPredicatesKeys = _requestedPredicates?.Properties().Select(p => p.Name).ToList();
+            JToken cred_def_id = null;
+            try
+            {
+                cred_def_id = _requestedAttributes[_requestedAttributesKeys[0]]["restrictions"][0]["cred_def_id"];
+            }
+            catch (Exception)
+            {
+                cred_def_id = null;
+            }
+            var credentials = new List<CredentialRecord>();
+            if (cred_def_id != null)
+            {
+                credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
+                    SearchQuery.And(SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")),
+                    SearchQuery.Equal(nameof(CredentialRecord.CredentialDefinitionId), cred_def_id.ToString())), null, 100);
+            } else
+            {
+                credentials = await RecordService.SearchAsync<CredentialRecord>(agentContext.Wallet,
+                    SearchQuery.Equal(nameof(CredentialRecord.State), CredentialState.Issued.ToString("G")), null, 100);
+            }
+            bool credentialFound = false;
+            if (credentials.Count > 0)
+            {
+                Dictionary<string, RequestedAttribute> requestedAttributes = new Dictionary<string, RequestedAttribute>();
+                Dictionary<string, RequestedAttribute> requestedPredicates = new Dictionary<string, RequestedAttribute>();
+                foreach (var credential in credentials)
+                {
+                    if (!credentialFound)
+                    {
+                        IEnumerable<CredentialAttribute> Attributes = credential.CredentialAttributesValues
+                        .Select(p =>
+                            new CredentialAttribute()
+                            {
+                                Name = p.Name,
+                                Value = p.Value?.ToString(),
+                                Type = "Text"
+                            })
+                        .ToList();
+
+
+                        foreach (var item in _requestedAttributesKeys)
+                        {
+                            foreach (var attrib in Attributes)
+                            {
+                                if (_requestedAttributes[item]["name"].ToString() == attrib.Name)
+                                {
+                                    RequestedAttribute requestedAttribute = new RequestedAttribute();
+                                    requestedAttribute.CredentialId = credential.CredentialId;
+                                    requestedAttribute.Revealed = true;
+                                    requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+                                    requestedAttributes.Add(item, requestedAttribute);
+                                    credentialFound = true;
+                                }
+                            }
+                            if (!credentialFound)
+                            {
+                                requestedAttributes.Clear();
+                            }
+                        }
+
+                        foreach (var item in _requestedPredicatesKeys)
+                        {
+                            RequestedAttribute requestedAttribute = new RequestedAttribute();
+                            requestedAttribute.CredentialId = credential.CredentialId;
+                            requestedAttribute.Timestamp = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+                            requestedPredicates.Add(item, requestedAttribute);
+                        }
+                    }
+                }
+
+                if (credentialFound)
+                {
+                    RequestedCredentials requestedCredentials = new RequestedCredentials();
+                    requestedCredentials.RequestedAttributes = requestedAttributes;
+                    requestedCredentials.RequestedPredicates = requestedPredicates;
+                    var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, proof.RequestJson);
+                    var threadId = proof.GetTag(TagConstants.LastThreadId);
+
+                    var proofMsg = new ProofMessage
+                    {
+                        ProofJson = proofJson
+                    };
+
+                    proofMsg.ThreadFrom(threadId);
+                    await MessageService.SendAsync(agentContext.Wallet, proofMsg, connection);
+                }
+            }
+        }
+
         /// <inheritdoc />
-        public virtual async Task<(ProofMessage, ProofRecord)> CreateProofAsync(IAgentContext agentContext, 
+        public virtual async Task<(ProofMessage, ConnectionRecord)> CreateProofAsync(IAgentContext agentContext, 
             string proofRequestId, RequestedCredentials requestedCredentials)
         {
             var record = await GetAsync(agentContext, proofRequestId);
+            var connection = await ConnectionService.GetAsync(agentContext, record.ConnectionId);
 
             if (record.State != ProofState.Requested)
                 throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof state was invalid. Expected '{ProofState.Requested}', found '{record.State}'");
 
+            var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, record.RequestJson);
+            if (proofJson.Contains("\"rev_reg_id\":null"))
+            {
+                String[] separator = { "\"rev_reg_id\":null" };
+                String[] proofJsonList = proofJson.Split(separator, StringSplitOptions.None);
+                proofJson = proofJsonList[0] + "\"rev_reg_id\":null,\"timestamp\":null}]}";
+            }
+            record.ProofJson = proofJson;
+            await record.TriggerAsync(ProofTrigger.Accept);
+            await RecordService.UpdateAsync(agentContext.Wallet, record);
+
+            var threadId = record.GetTag(TagConstants.LastThreadId);
+
+            var proofMsg = new ProofMessage
+            {
+                ProofJson = proofJson
+            };
+
+            proofMsg.ThreadFrom(threadId);
+
+            return (proofMsg, connection);
+        }
+
+        private async Task<string> CreateProofJsonAsync(IAgentContext agentContext,
+            RequestedCredentials requestedCredentials, string requestJson)
+        {
             var provisioningRecord = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
 
             var credentialObjects = new List<CredentialInfo>();
@@ -221,24 +365,11 @@ namespace AgentFramework.Core.Runtime
                 credentialObjects,
                 requestedCredentials);
 
-            var proofJson = await AnonCreds.ProverCreateProofAsync(agentContext.Wallet, record.RequestJson,
+            var proofJson = await AnonCreds.ProverCreateProofAsync(agentContext.Wallet, requestJson,
                 requestedCredentials.ToJson(), provisioningRecord.MasterSecretId, schemas, definitions,
                 revocationStates);
 
-            record.ProofJson = proofJson;
-            await record.TriggerAsync(ProofTrigger.Accept);
-            await RecordService.UpdateAsync(agentContext.Wallet, record);
-
-            var threadId = record.GetTag(TagConstants.LastThreadId);
-
-            var proofMsg = new ProofMessage
-            {
-                ProofJson = proofJson
-            };
-
-            proofMsg.ThreadFrom(threadId);
-
-            return (proofMsg, record);
+            return proofJson;
         }
 
         /// <inheritdoc />

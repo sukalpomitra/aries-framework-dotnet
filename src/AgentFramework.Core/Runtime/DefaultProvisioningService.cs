@@ -142,7 +142,8 @@ namespace AgentFramework.Core.Runtime
                 {
                     Name = configuration.OwnerName,
                     ImageUrl = configuration.OwnerImageUrl
-                }
+                },
+                PassCode = configuration.PassCode
             };
 
             // Populate initial tags if any passed
