@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
 using AgentFramework.Core.Exceptions;
 using AgentFramework.Core.Messages;
-using AgentFramework.Core.Messages.Proofs;
 
 namespace AgentFramework.Core.Handlers.Internal
 {
@@ -24,8 +23,6 @@ namespace AgentFramework.Core.Handlers.Internal
         /// </value>
         public IEnumerable<MessageType> SupportedMessageTypes => new MessageType[]
         {
-            MessageTypes.ProofRequest,
-            MessageTypes.DisclosedProof,
             MessageTypes.PresentProofNames.Presentation,
             MessageTypes.PresentProofNames.RequestPresentation
         };
@@ -37,7 +34,7 @@ namespace AgentFramework.Core.Handlers.Internal
         /// <param name="messageContext">The agent message agentContext.</param>
         /// <returns></returns>
         /// <exception cref="AgentFrameworkException">Unsupported message type {messageType}</exception>
-        public async Task<AgentMessage> ProcessAsync(IAgentContext agentContext, MessageContext messageContext)
+        public async Task<AgentMessage> ProcessAsync(IAgentContext agentContext, UnpackedMessageContext messageContext)
         {
             switch (messageContext.GetMessageType())
             {

@@ -34,7 +34,7 @@ namespace AgentFramework.Core.Runtime.Transport
         public string[] TransportSchemes => new[] { "http", "https" };
         
         /// <inheritdoc />
-        public async Task<MessageContext> DispatchAsync(Uri endpointUri, MessageContext message)
+        public async Task<PackedMessageContext> DispatchAsync(Uri endpointUri, PackedMessageContext message)
         {
             var request = new HttpRequestMessage
             {
@@ -62,7 +62,7 @@ namespace AgentFramework.Core.Runtime.Transport
                 //TODO this assumes all messages are packed
                 if (rawContent.Length > 0)
                 {
-                    return new MessageContext(rawContent, true);
+                    return new PackedMessageContext(rawContent);
                 }
             }
 

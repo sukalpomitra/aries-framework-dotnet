@@ -45,45 +45,6 @@ namespace AgentFramework.Core.Runtime
         }
 
         /// <inheritdoc />
-        public virtual Task<byte[]> PrepareAsync(Wallet wallet, AgentMessage message, ConnectionRecord connection, string recipientKey = null, bool useRoutingKeys = true)
-        {
-            recipientKey = recipientKey
-                                ?? connection.TheirVk
-                                ?? throw new AgentFrameworkException(
-                                    ErrorCode.A2AMessageTransmissionError, "Cannot find encryption key");
-
-            var routingKeys = useRoutingKeys && connection.Endpoint?.Verkey != null ? new[] { connection.Endpoint.Verkey } : new string[0];
-
-            return PrepareAsync(wallet, message, recipientKey, routingKeys, connection.MyVk);
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<byte[]> PrepareAsync(Wallet wallet, AgentMessage message, string recipientKey, string[] routingKeys = null, string senderKey = null)
-        {
-            if (message == null) throw new ArgumentNullException(nameof(message));
-            if (recipientKey == null) throw new ArgumentNullException(nameof(recipientKey));
-
-            // Pack application level message
-            var msg = await CryptoUtils.PackAsync(wallet, recipientKey, message.ToByteArray(), senderKey);
-
-            var previousKey = recipientKey;
-
-            if (routingKeys != null)
-            {
-                // TODO: In case of multiple key, should they each wrap a forward message
-                // or pass all keys to the PackAsync function as array?
-                foreach (var routingKey in routingKeys)
-                {
-                    // Anonpack
-                    msg = await CryptoUtils.PackAsync(wallet, routingKey, new ForwardMessage { Message = msg.GetUTF8String(), To = previousKey });
-                    previousKey = routingKey;
-                }
-            }
-
-            return msg;
-        }
-
-        /// <inheritdoc />
         public virtual async Task<(byte[], string)> PrepareRouteAsync(Wallet wallet, byte[] message, string endpointUri)
         {
             var records = await _registrationService.GetAllCloudAgentAsync(wallet);
@@ -97,8 +58,7 @@ namespace AgentFramework.Core.Runtime
             }
             return (message, endpointUri);
         }
-
-        private async Task<MessageContext> UnpackAsync(Wallet wallet, MessageContext message, ConnectionRecord connection)
+        private async Task<UnpackedMessageContext> UnpackAsync(Wallet wallet, PackedMessageContext message, string senderKey)
         {
             UnpackResult unpacked;
 
@@ -111,37 +71,39 @@ namespace AgentFramework.Core.Runtime
                 //Logger.LogError("Failed to un-pack message", e);
                 throw new AgentFrameworkException(ErrorCode.InvalidMessage, "Failed to un-pack message", e);
             }
-
-            message = new MessageContext(unpacked.Message, false, connection);
-
-            return message;
+            return new UnpackedMessageContext(unpacked.Message, senderKey);
         }
 
         /// <inheritdoc />
-        public virtual async Task<MessageContext> SendAsync(Wallet wallet, AgentMessage message, ConnectionRecord connection, string recipientKey = null, bool requestResponse = false)
+        public virtual async Task SendAsync(Wallet wallet, AgentMessage message, string recipientKey,
+            string endpointUri, string[] routingKeys = null, string senderKey = null)
         {
-            recipientKey = recipientKey
-                                ?? connection.TheirVk
-                                ?? throw new AgentFrameworkException(
-                                    ErrorCode.A2AMessageTransmissionError, "Cannot find encryption key");
+            Logger.LogInformation(LoggingEvents.SendMessage, "Recipient {0} Endpoint {1}", recipientKey,
+                endpointUri);
 
-            var routingKeys = connection.Endpoint?.Verkey != null ? new[] { connection.Endpoint.Verkey } : new string[0];
+            if (string.IsNullOrEmpty(message.Id))
+                throw new AgentFrameworkException(ErrorCode.InvalidMessage, "@id field on message must be populated");
 
-            if (connection.Endpoint?.Uri == null)
-                throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, "Cannot send to connection that does not have endpoint information specified");
+            if (string.IsNullOrEmpty(message.Type))
+                throw new AgentFrameworkException(ErrorCode.InvalidMessage, "@type field on message must be populated");
 
-            var response = await SendAsync(wallet, message, recipientKey, connection.Endpoint.Uri, routingKeys, connection.MyVk, requestResponse);
+            if (string.IsNullOrEmpty(endpointUri))
+                throw new ArgumentNullException(nameof(endpointUri));
 
-            if (response?.Packed != null)
-            {
-                response = await UnpackAsync(wallet, response, connection);
-            }
+            var uri = new Uri(endpointUri);
 
-            return response;
+            var dispatcher = GetDispatcher(uri.Scheme);
+
+            if (dispatcher == null)
+                throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
+
+            var wireMsg = await CryptoUtils.PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
+
+            await dispatcher.DispatchAsync(uri, new PackedMessageContext(wireMsg));
         }
 
         /// <inheritdoc />
-        public virtual async Task<MessageContext> SendAsync(Wallet wallet, AgentMessage message, string recipientKey,
+        public async Task<MessageContext> SendReceiveAsync(Wallet wallet, AgentMessage message, string recipientKey,
             string endpointUri, string[] routingKeys = null, string senderKey = null, bool requestResponse = false)
         {
             Logger.LogInformation(LoggingEvents.SendMessage, "Recipient {0} Endpoint {1}", recipientKey,
@@ -159,7 +121,7 @@ namespace AgentFramework.Core.Runtime
             if (requestResponse)
                 message.AddReturnRouting();
 
-            var wireMsg = await PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
+            var wireMsg = await CryptoUtils.PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
             var (msg, serviceEndpoint) = await PrepareRouteAsync(wallet, wireMsg, endpointUri);
             var uri = new Uri(serviceEndpoint);
 
@@ -168,7 +130,15 @@ namespace AgentFramework.Core.Runtime
             if (dispatcher == null)
                 throw new AgentFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
 
-            return await dispatcher.DispatchAsync(uri, new MessageContext(msg, true));
+            var response = await dispatcher.DispatchAsync(uri, new PackedMessageContext(msg));
+            if (requestResponse) {
+                if (response is PackedMessageContext responseContext)
+                {
+                    return await UnpackAsync(wallet, responseContext, senderKey);
+                }
+                throw new InvalidOperationException("Invalid or empty response");
+            }
+            return response;
         }
 
         /// <inheritdoc />

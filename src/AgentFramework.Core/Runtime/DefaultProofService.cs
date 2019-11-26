@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AgentFramework.Core.Contracts;
+using AgentFramework.Core.Decorators;
 using AgentFramework.Core.Decorators.Attachments;
 using AgentFramework.Core.Decorators.Threading;
 using AgentFramework.Core.Exceptions;
@@ -606,19 +607,25 @@ namespace AgentFramework.Core.Runtime
             return result.ToJson();
         }
 
+        /// <inheritdoc />
         public Task<(RequestPresentationMessage, ProofRecord)> CreateRequestAsync(
             IAgentContext agentContext,
             ProofRequest proofRequest,
-            string connectionId = null) => 
+            string connectionId) => 
             CreateRequestAsync(
                 agentContext: agentContext,
                 proofRequestJson: proofRequest?.ToJson(),
                 connectionId: connectionId);
 
+        /// <inheritdoc />
         public async Task<(RequestPresentationMessage, ProofRecord)> CreateRequestAsync(IAgentContext agentContext, string proofRequestJson, string connectionId)
         {
             Logger.LogInformation(LoggingEvents.CreateProofRequest, "ConnectionId {0}", connectionId);
 
+            if (proofRequestJson == null)
+            {
+                throw new ArgumentNullException(nameof(proofRequestJson), "You must provide proof request");
+            }
             if (connectionId != null)
             {
                 var connection = await ConnectionService.GetAsync(agentContext, connectionId);
@@ -662,6 +669,19 @@ namespace AgentFramework.Core.Runtime
             return (message, proofRecord);
         }
 
+        /// <inheritdoc />
+        public async Task<(RequestPresentationMessage, ProofRecord)> CreateRequestAsync(IAgentContext agentContext, ProofRequest proofRequest)
+        {
+            var (message, record) = await CreateRequestAsync(agentContext, proofRequest, null);
+            var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
+
+            message.AddDecorator(provisioning.ToServiceDecorator(), DecoratorNames.ServiceDecorator);
+            record.SetTag("RequestData", message.ToByteArray().ToBase64UrlString());
+
+            return (message, record);
+        }
+
+        /// <inheritdoc />
         public async Task<ProofRecord> ProcessRequestAsync(IAgentContext agentContext, RequestPresentationMessage requestPresentationMessage, ConnectionRecord connection)
         {
             var requestAttachment = requestPresentationMessage.Requests.FirstOrDefault(x => x.Id == "libindy-request-presentation-0")
@@ -692,14 +712,15 @@ namespace AgentFramework.Core.Runtime
             return proofRecord;
         }
 
+        /// <inheritdoc />
         public async Task<ProofRecord> ProcessPresentationAsync(IAgentContext agentContext, PresentationMessage presentationMessage)
         {
+            var proofRecord = await this.GetByThreadIdAsync(agentContext, presentationMessage.GetThreadId());
+
             var requestAttachment = presentationMessage.Presentations.FirstOrDefault(x => x.Id == "libindy-presentation-0")
                 ?? throw new ArgumentException("Presentation attachment not found.");
 
             var proofJson = requestAttachment.Data.Base64.GetBytesFromBase64().GetUTF8String();
-
-            var proofRecord = await this.GetByThreadIdAsync(agentContext, presentationMessage.GetThreadId());
 
             if (proofRecord.State != ProofState.Requested)
                 throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
@@ -719,11 +740,11 @@ namespace AgentFramework.Core.Runtime
             return proofRecord;
         }
 
-        public Task<string> CreatePresentationAsync(IAgentContext agentContext, ProofRequest proofRequest, RequestedCredentials requestedCredentials)
-        {
-            return CreateProofAsync(agentContext, proofRequest, requestedCredentials);
-        }
+        /// <inheritdoc />
+        public Task<string> CreatePresentationAsync(IAgentContext agentContext, ProofRequest proofRequest, RequestedCredentials requestedCredentials) => 
+            CreateProofAsync(agentContext, proofRequest, requestedCredentials);
 
+        /// <inheritdoc />
         public async Task<(PresentationMessage, ProofRecord)> CreatePresentationAsync(IAgentContext agentContext, string proofRecordId, RequestedCredentials requestedCredentials)
         {
             var record = await GetAsync(agentContext, proofRecordId);
