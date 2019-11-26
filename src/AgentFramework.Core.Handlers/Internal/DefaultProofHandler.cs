@@ -40,14 +40,21 @@ namespace AgentFramework.Core.Handlers.Internal
             switch (messageContext.GetMessageType())
             {
                 case MessageTypes.ProofRequest:
+                {
                     var request = messageContext.GetMessage<ProofRequestMessage>();
-                    await _proofService.ProcessProofRequestAsync(agentContext, request, messageContext.Connection, false);
+                    var proofId = await _proofService.ProcessProofRequestAsync(agentContext, request, messageContext.Connection, false);
+                    messageContext.ContextRecord = await _proofService.GetAsync(agentContext, proofId);
                     break;
+                }
 
                 case MessageTypes.DisclosedProof:
+                {
                     var proof = messageContext.GetMessage<ProofMessage>();
-                    await _proofService.ProcessProofAsync(agentContext, proof);
+                    var proofId = await _proofService.ProcessProofAsync(agentContext, proof);
+
+                    messageContext.ContextRecord = await _proofService.GetAsync(agentContext, proofId);
                     break;
+                }
                 default:
                     throw new AgentFrameworkException(ErrorCode.InvalidMessage,
                         $"Unsupported message type {messageContext.GetMessageType()}");
