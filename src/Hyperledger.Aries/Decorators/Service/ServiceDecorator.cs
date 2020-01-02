@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-﻿using System.Collections.Generic;
-=======
 using System.Collections.Generic;
->>>>>>> master
 using Newtonsoft.Json;
 
 namespace Hyperledger.Aries.Decorators.Service

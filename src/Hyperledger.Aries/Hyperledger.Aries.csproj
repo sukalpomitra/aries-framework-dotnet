@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Runtime\Responses\" />
+    <Folder Include="Features\CloudRegistrationMessage\" />
   </ItemGroup>
 </Project>

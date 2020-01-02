@@ -421,7 +421,7 @@ namespace Hyperledger.Aries.Features.PresentProof
                 message: presentationMessage,
                 recipientKey: service.RecipientKeys.First(),
                 endpointUri: service.ServiceEndpoint,
-                routingKeys: service.RoutingKeys.ToArray());
+                routingKeys: service.RoutingKeys?.ToArray());
 
             return proofRecord;
         }
@@ -432,7 +432,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             var request = await GetAsync(agentContext, proofRequestId);
 
             if (request.State != ProofState.Requested)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof record state was invalid. Expected '{ProofState.Requested}', found '{request.State}'");
 
             await request.TriggerAsync(ProofTrigger.Reject);
@@ -476,7 +476,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             var proofRecord = await GetAsync(agentContext, proofRecId);
 
             if (proofRecord.State != ProofState.Accepted)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof record state was invalid. Expected '{ProofState.Accepted}', found '{proofRecord.State}'");
 
             return await VerifyProofAsync(agentContext, proofRecord.RequestJson, proofRecord.ProofJson);
@@ -492,7 +492,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             Logger.LogInformation(LoggingEvents.GetProofRecord, "ProofRecordId {0}", proofRecId);
 
             return await RecordService.GetAsync<ProofRecord>(agentContext.Wallet, proofRecId) ??
-                   throw new AgentFrameworkException(ErrorCode.RecordNotFound, "Proof record not found");
+                   throw new AriesFrameworkException(ErrorCode.RecordNotFound, "Proof record not found");
         }
 
         /// <inheritdoc />
@@ -647,7 +647,7 @@ namespace Hyperledger.Aries.Features.PresentProof
                 var connection = await ConnectionService.GetAsync(agentContext, connectionId);
 
                 if (connection.State != ConnectionState.Connected)
-                    throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                    throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                         $"Connection state was invalid. Expected '{ConnectionState.Connected}', found '{connection.State}'");
             }
 
@@ -739,7 +739,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             var proofJson = requestAttachment.Data.Base64.GetBytesFromBase64().GetUTF8String();
 
             if (proofRecord.State != ProofState.Requested)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof state was invalid. Expected '{ProofState.Requested}', found '{proofRecord.State}'");
 
             proofRecord.ProofJson = proofJson;
@@ -766,7 +766,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             var record = await GetAsync(agentContext, proofRecordId);
 
             if (record.State != ProofState.Requested)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof state was invalid. Expected '{ProofState.Requested}', found '{record.State}'");
 
             var proofJson = await CreatePresentationAsync(

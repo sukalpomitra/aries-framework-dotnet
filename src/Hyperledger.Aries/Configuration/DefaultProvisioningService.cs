@@ -74,7 +74,7 @@ namespace Hyperledger.Aries.Configuration
             var record = await RecordService.GetAsync<ProvisioningRecord>(wallet, ProvisioningRecord.UniqueRecordId);
 
             if (record == null)
-                throw new AgentFrameworkException(ErrorCode.RecordNotFound, "Provisioning record not found");
+                throw new AriesFrameworkException(ErrorCode.RecordNotFound, "Provisioning record not found");
 
             return record;
         }
@@ -161,6 +161,9 @@ namespace Hyperledger.Aries.Configuration
             record.IssuerSeed = agentOptions.IssuerKeySeed;
             record.IssuerDid = issuer.Did;
             record.IssuerVerkey = issuer.VerKey;
+            record.TailsBaseUri = agentOptions.EndpointUri != null
+                ? new Uri(new Uri(agentOptions.EndpointUri), "tails/").ToString()
+                : null;
 
             record.SetTag("AgentKeySeed", agentOptions.AgentKeySeed);
             record.SetTag("IssuerKeySeed", agentOptions.IssuerKeySeed);

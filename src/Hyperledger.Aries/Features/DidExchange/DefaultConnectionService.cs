@@ -108,7 +108,7 @@ namespace Hyperledger.Aries.Features.DidExchange
                 }
                 else
                 {
-                    throw new AgentFrameworkException(ErrorCode.RecordInInvalidState, "No Cloud Agent Registered");
+                    throw new AriesFrameworkException(ErrorCode.RecordInInvalidState, "No Cloud Agent Registered Or No Provision record has no endpoint information specified");
                 }
             }
 
@@ -130,7 +130,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             var connection = await GetAsync(agentContext, invitationId);
 
             if (connection.State != ConnectionState.Invited)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Connection state was invalid. Expected '{ConnectionState.Invited}', found '{connection.State}'");
 
             await RecordService.DeleteAsync<ConnectionRecord>(agentContext.Wallet, invitationId);
@@ -303,7 +303,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             var connection = await GetAsync(agentContext, connectionId);
 
             if (connection.State != ConnectionState.Negotiating)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
+                throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Connection state was invalid. Expected '{ConnectionState.Negotiating}', found '{connection.State}'");
 
             await Pairwise.CreateAsync(agentContext.Wallet, connection.TheirDid, connection.MyDid, connection.Endpoint.ToJson());
@@ -345,7 +345,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             var record = await RecordService.GetAsync<ConnectionRecord>(agentContext.Wallet, connectionId);
 
             if (record == null)
-                throw new AgentFrameworkException(ErrorCode.RecordNotFound, "Connection record not found");
+                throw new AriesFrameworkException(ErrorCode.RecordNotFound, "Connection record not found");
 
             return record;
         }

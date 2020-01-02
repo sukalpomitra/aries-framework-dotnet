@@ -40,41 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddSingleton<IAgent, T>();
             builder.Services.Configure(options);
             builder.Services.AddHostedService<MediatorProvisioningService>();
-            builder.Services.AddSingleton<AgentMiddleware>();
             builder.Services.AddSingleton<MediatorDiscoveryMiddleware>();
-
-            return builder;
-        }
-
-        /// <summary>
-        /// Registers and provisions an agent.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        public static AriesFrameworkBuilder RegisterEdgeAgent(
-            this AriesFrameworkBuilder builder,
-            Action<AgentOptions> options)
-            => RegisterEdgeAgent<DefaultAgent>(builder, options);
-
-        /// <summary>
-        /// Registers and provisions an agent with custom implementation
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        public static AriesFrameworkBuilder RegisterEdgeAgent<T>(
-            this AriesFrameworkBuilder builder,
-            Action<AgentOptions> options)
-            where T : class, IAgent
-        {
-            builder.AddAgentProvider();
-            builder.Services.AddDefaultMessageHandlers();
-            builder.Services.AddSingleton<IAgent, T>();
-            builder.Services.Configure(options);
-            builder.Services.AddSingleton<IEdgeClientService, EdgeClientService>();
-            builder.Services.AddExtendedConnectionService<EdgeConnectionService>();
-            builder.Services.AddHostedService<EdgeProvisioningService>();
 
             return builder;
         }

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Hyperledger.Aries.Agents.Edge
 {
-    public class MediatorProvisioningService : IHostedService
+    internal class MediatorProvisioningService : IHostedService
     {
         internal const string EdgeInvitationTagName = "EdgeInvitationId";
         internal const string InvitationTagName = "Invitation";
@@ -38,6 +38,10 @@ namespace Hyperledger.Aries.Agents.Edge
             try
             {
                 await provisioningService.ProvisionAgentAsync();
+            }
+            catch(WalletStorageException)
+            {
+                // OK
             }
             catch (WalletExistsException)
             {

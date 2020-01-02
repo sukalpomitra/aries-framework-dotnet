@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Hyperledger.Aries.Agents.Edge
 {
-    public class EdgeProvisioningService : IHostedService
+    internal class EdgeProvisioningService : IHostedService, IEdgeProvisioningService
     {
         private const string MediatorConnectionIdTagName = "MediatorConnectionId";
         private const string MediatorInboxIdTagName = "MediatorInboxId";
@@ -42,16 +42,20 @@ namespace Hyperledger.Aries.Agents.Edge
             this.options = options.Value;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task ProvisionAsync(AgentOptions options, CancellationToken cancellationToken = default)
         {
             var discovery = await edgeClientService.DiscoverConfigurationAsync(options.EndpointUri);
-            
+
             try
             {
                 options.AgentKey = discovery.RoutingKey;
                 options.EndpointUri = discovery.ServiceEndpoint;
 
                 await provisioningService.ProvisionAgentAsync(options);
+            }
+            catch(WalletStorageException)
+            {
+                // OK
             }
             catch (WalletExistsException)
             {
@@ -65,9 +69,9 @@ namespace Hyperledger.Aries.Agents.Edge
             {
                 var (request, record) = await connectionService.CreateRequestAsync(agentContext, discovery.Invitation);
                 var response = await messageService.SendReceiveAsync<ConnectionResponseMessage>(agentContext.Wallet, request, record);
-               
+
                 await connectionService.ProcessResponseAsync(agentContext, response, record);
-                
+
                 // Remove the routing key explicitly as it won't ever be needed.
                 // Messages will always be sent directly with return routing enabled
                 record = await connectionService.GetAsync(agentContext, record.Id);
@@ -81,9 +85,10 @@ namespace Hyperledger.Aries.Agents.Edge
             await edgeClientService.CreateInboxAsync(agentContext);
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+        public Task ProvisionAsync(CancellationToken cancellationToken = default) => ProvisionAsync(options, cancellationToken);
+
+        public Task StartAsync(CancellationToken cancellationToken) => ProvisionAsync(cancellationToken);
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
