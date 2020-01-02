@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Hyperledger.Aries.Agents
 {
@@ -68,7 +70,7 @@ namespace Hyperledger.Aries.Agents
             var responseBody = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                throw new AgentFrameworkException(
+                throw new AriesFrameworkException(
                     ErrorCode.A2AMessageTransmissionError, $"Failed to consume A2A message with an HTTP status code of {response.StatusCode} and content {responseBody}");
             }
 

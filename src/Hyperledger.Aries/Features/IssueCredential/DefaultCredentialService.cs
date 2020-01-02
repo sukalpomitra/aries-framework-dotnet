@@ -386,7 +386,6 @@ namespace Hyperledger.Aries.Features.IssueCredential
                 revRegDefJson: revocationRegistryDefinitionJson);
 
             credentialRecord.CredentialId = credentialId;
-            credentialRecord.CredentialAttributesValues = attributes;
 
             await credentialRecord.TriggerAsync(CredentialTrigger.Issue);
             await RecordService.UpdateAsync(agentContext.Wallet, credentialRecord);

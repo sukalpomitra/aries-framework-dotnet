@@ -49,7 +49,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
         /// <exception cref="AriesFrameworkException">Throws with ErrorCode.RecordInInvalidState.</exception>
         /// <exception cref="AriesFrameworkException">Throws with ErrorCode.A2AMessageTransmissionError.</exception>
         /// <returns>The response async.</returns>
-        Task<(CredentialRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, string credentialId);
+        Task<(CredentialRequestMessage, CredentialRecord)> CreateRequestAsync(IAgentContext agentContext, string credentialId);
 
         /// <summary>
         /// Create a credential based on an offer message. This is method is used for connectionless credential exchange.
