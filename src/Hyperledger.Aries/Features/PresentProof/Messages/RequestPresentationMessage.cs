@@ -1,6 +1,7 @@
 using System;
 using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Decorators.Attachments;
+using Hyperledger.Aries.Decorators.Service;
 using Newtonsoft.Json;
 
 namespace Hyperledger.Aries.Features.PresentProof
@@ -34,5 +35,14 @@ namespace Hyperledger.Aries.Features.PresentProof
         /// <value></value>
         [JsonProperty("request_presentations~attach")]
         public Attachment[] Requests { get; set; }
+
+        /// <summary>
+        /// Gets or sets the service decorator.
+        /// </summary>
+        /// <value>
+        /// The service decorator.
+        /// </value>
+        [JsonProperty("~service", NullValueHandling = NullValueHandling.Ignore)]
+        public ServiceDecorator ServiceDecorator { get; set; }
     }
 }

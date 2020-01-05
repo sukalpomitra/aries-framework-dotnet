@@ -101,114 +101,6 @@ namespace Hyperledger.Aries.Features.PresentProof
             Logger = logger;
         }
 
-        /// <inheritdoc />
-        public virtual async Task<(ProofRequestMessage, ProofRecord)> CreateProofRequestAsync(
-            IAgentContext agentContext, ProofRequest proofRequest,
-            string connectionId)
-        {
-            if (string.IsNullOrWhiteSpace(proofRequest.Nonce))
-                throw new ArgumentNullException(nameof(proofRequest.Nonce), "Nonce must be set.");
-
-            return await CreateProofRequestAsync(agentContext, proofRequest.ToJson(), connectionId);
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<(ProofRequestMessage, ProofRecord)> CreateProofRequestAsync(
-            IAgentContext agentContext, string proofRequestJson,
-            string connectionId = null)
-        {
-            Logger.LogInformation(LoggingEvents.CreateProofRequest, "ConnectionId {0}", connectionId);
-
-            var threadId = Guid.NewGuid().ToString();
-
-            if (connectionId != null)
-            {
-                var connection = await ConnectionService.GetAsync(agentContext, connectionId);
-
-                if (connection.State != ConnectionState.Connected)
-                    throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
-                        $"Connection state was invalid. Expected '{ConnectionState.Connected}', found '{connection.State}'");
-            }
-
-            var proofRecord = new ProofRecord
-            {
-                Id = Guid.NewGuid().ToString(),
-                ConnectionId = connectionId,
-                RequestJson = proofRequestJson
-            };
-            proofRecord.SetTag(TagConstants.Role, TagConstants.Requestor);
-            proofRecord.SetTag(TagConstants.LastThreadId, threadId);
-
-            await RecordService.AddAsync(agentContext.Wallet, proofRecord);
-
-            return (new ProofRequestMessage {Id = threadId, ProofRequestJson = proofRequestJson}, proofRecord);
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<string> ProcessProofAsync(IAgentContext agentContext, ProofMessage proof)
-        {
-            var proofJson = proof.ProofJson;
-
-            var proofRecord = await this.GetByThreadIdAsync(agentContext, proof.GetThreadId());
-
-            if (proofRecord.State != ProofState.Requested)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
-                    $"Proof state was invalid. Expected '{ProofState.Requested}', found '{proofRecord.State}'");
-
-            proofRecord.ProofJson = proofJson;
-            await proofRecord.TriggerAsync(ProofTrigger.Accept);
-            await RecordService.UpdateAsync(agentContext.Wallet, proofRecord);
-
-            EventAggregator.Publish(new ServiceMessageProcessingEvent
-            {
-                RecordId = proofRecord.Id,
-                MessageType = proof.Type,
-                ThreadId = proof.GetThreadId()
-            });
-
-            return proofRecord.Id;
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<string> ProcessProofRequestAsync(IAgentContext agentContext,
-            ProofRequestMessage proofRequest, ConnectionRecord connection, bool isVcOidc)
-        {
-            var requestJson = proofRequest.ProofRequestJson;
-
-            
-            // Write offer record to local wallet
-            var proofRecord = new ProofRecord
-            {
-                Id = Guid.NewGuid().ToString(),
-                RequestJson = requestJson,
-                ConnectionId = isVcOidc ? null : connection.Id,
-                State = ProofState.Requested
-            };
-            proofRecord.SetTag(TagConstants.LastThreadId, proofRequest.GetThreadId());
-            proofRecord.SetTag(TagConstants.Role, TagConstants.Holder);
-
-            if (!connection.Sso && !isVcOidc)
-            {
-                await RecordService.AddAsync(agentContext.Wallet, proofRecord);
-
-                EventAggregator.Publish(new ServiceMessageProcessingEvent
-                {
-                    RecordId = proofRecord.Id,
-                    MessageType = proofRequest.Type,
-                    ThreadId = proofRequest.GetThreadId()
-                });
-            } else
-            {
-                if (isVcOidc)
-                {
-                    connection.Endpoint = new AgentEndpoint { Uri = proofRequest.ServiceDecorator.ServiceEndpoint?.ToString() };
-                }
-                await SelectCredentialsForProofAsync(agentContext, proofRecord, connection);
-            }
-
-            return proofRecord.Id;
-        }
-
         private async Task SelectCredentialsForProofAsync(IAgentContext agentContext, ProofRecord proof, ConnectionRecord connection)
         {
             var requestJson = (JObject)JsonConvert.DeserializeObject(proof.RequestJson);
@@ -294,49 +186,29 @@ namespace Hyperledger.Aries.Features.PresentProof
                     var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, proof.RequestJson);
                     var threadId = proof.GetTag(TagConstants.LastThreadId);
 
-                    var proofMsg = new ProofMessage
+                    var proofMsg = new PresentationMessage
                     {
-                        ProofJson = proofJson
+                        Id = threadId,
+                        Presentations = new[]
+                        {
+                            new Attachment
+                            {
+                                Id = "libindy-presentation-0",
+                                MimeType = CredentialMimeTypes.ApplicationJsonMimeType,
+                                Data = new AttachmentContent
+                                {
+                                    Base64 = proofJson
+                                        .GetUTF8Bytes()
+                                        .ToBase64String()
+                                }
+                            }
+                        }
                     };
 
                     proofMsg.ThreadFrom(threadId);
                     await MessageService.SendAsync(agentContext.Wallet, proofMsg, connection);
                 }
             }
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<(ProofMessage, ConnectionRecord)> CreateProofAsync(IAgentContext agentContext, 
-            string proofRequestId, RequestedCredentials requestedCredentials)
-        {
-            var record = await GetAsync(agentContext, proofRequestId);
-            var connection = await ConnectionService.GetAsync(agentContext, record.ConnectionId);
-
-            if (record.State != ProofState.Requested)
-                throw new AgentFrameworkException(ErrorCode.RecordInInvalidState,
-                    $"Proof state was invalid. Expected '{ProofState.Requested}', found '{record.State}'");
-
-            var proofJson = await CreateProofJsonAsync(agentContext, requestedCredentials, record.RequestJson);
-            if (proofJson.Contains("\"rev_reg_id\":null"))
-            {
-                String[] separator = { "\"rev_reg_id\":null" };
-                String[] proofJsonList = proofJson.Split(separator, StringSplitOptions.None);
-                proofJson = proofJsonList[0] + "\"rev_reg_id\":null,\"timestamp\":null}]}";
-            }
-            record.ProofJson = proofJson;
-            await record.TriggerAsync(ProofTrigger.Accept);
-            await RecordService.UpdateAsync(agentContext.Wallet, record);
-
-            var threadId = record.GetTag(TagConstants.LastThreadId);
-
-            var proofMsg = new ProofMessage
-            {
-                ProofJson = proofJson
-            };
-
-            proofMsg.ThreadFrom(threadId);
-
-            return (proofMsg, connection);
         }
 
         private async Task<string> CreateProofJsonAsync(IAgentContext agentContext,
@@ -413,7 +285,7 @@ namespace Hyperledger.Aries.Features.PresentProof
         {
             var service = requestPresentation.GetDecorator<ServiceDecorator>(DecoratorNames.ServiceDecorator);
 
-            var record = await ProcessRequestAsync(agentContext, requestPresentation, null);
+            var record = await ProcessRequestAsync(agentContext, requestPresentation, null, false);
             var (presentationMessage, proofRecord) = await CreatePresentationAsync(agentContext, record.Id, requestedCredentials);
 
             await MessageService.SendAsync(
@@ -698,7 +570,7 @@ namespace Hyperledger.Aries.Features.PresentProof
         }
 
         /// <inheritdoc />
-        public async Task<ProofRecord> ProcessRequestAsync(IAgentContext agentContext, RequestPresentationMessage requestPresentationMessage, ConnectionRecord connection)
+        public async Task<ProofRecord> ProcessRequestAsync(IAgentContext agentContext, RequestPresentationMessage requestPresentationMessage, ConnectionRecord connection, bool isVcOidc)
         {
             var requestAttachment = requestPresentationMessage.Requests.FirstOrDefault(x => x.Id == "libindy-request-presentation-0")
                 ?? throw new ArgumentException("Presentation request attachment not found.");
@@ -710,20 +582,31 @@ namespace Hyperledger.Aries.Features.PresentProof
             {
                 Id = Guid.NewGuid().ToString(),
                 RequestJson = requestJson,
-                ConnectionId = connection?.Id,
+                ConnectionId = isVcOidc ? null : connection.Id,
                 State = ProofState.Requested
             };
             proofRecord.SetTag(TagConstants.LastThreadId, requestPresentationMessage.GetThreadId());
             proofRecord.SetTag(TagConstants.Role, TagConstants.Holder);
 
-            await RecordService.AddAsync(agentContext.Wallet, proofRecord);
-
-            EventAggregator.Publish(new ServiceMessageProcessingEvent
+            if (!connection.Sso && !isVcOidc)
             {
-                RecordId = proofRecord.Id,
-                MessageType = requestPresentationMessage.Type,
-                ThreadId = requestPresentationMessage.GetThreadId()
-            });
+                await RecordService.AddAsync(agentContext.Wallet, proofRecord);
+
+                EventAggregator.Publish(new ServiceMessageProcessingEvent
+                {
+                    RecordId = proofRecord.Id,
+                    MessageType = requestPresentationMessage.Type,
+                    ThreadId = requestPresentationMessage.GetThreadId()
+                });
+            }
+            else
+            {
+                if (isVcOidc)
+                {
+                    connection.Endpoint = new AgentEndpoint { Uri = requestPresentationMessage.ServiceDecorator.ServiceEndpoint?.ToString() };
+                }
+                await SelectCredentialsForProofAsync(agentContext, proofRecord, connection);
+            }
 
             return proofRecord;
         }
@@ -773,7 +656,13 @@ namespace Hyperledger.Aries.Features.PresentProof
                 agentContext,
                 record.RequestJson.ToObject<ProofRequest>(),
                 requestedCredentials);
-
+            /* See if this is required */
+            /*if (proofJson.Contains("\"rev_reg_id\":null"))
+            {
+                String[] separator = { "\"rev_reg_id\":null" };
+                String[] proofJsonList = proofJson.Split(separator, StringSplitOptions.None);
+                proofJson = proofJsonList[0] + "\"rev_reg_id\":null,\"timestamp\":null}]}";
+            }*/
             record.ProofJson = proofJson;
             await record.TriggerAsync(ProofTrigger.Accept);
             await RecordService.UpdateAsync(agentContext.Wallet, record);
