@@ -84,6 +84,14 @@ namespace Hyperledger.Aries.Configuration
         public string AgentKey { get; set; }
 
         /// <summary>
+        /// Gets or sets the passcode of the agent
+        /// </summary>
+        /// <value>
+        /// The agent passcode
+        /// </value>
+        public string PassCode { get; set; }
+
+        /// <summary>
         /// Gets or sets the name of the pool.
         /// </summary>
         /// <value>The name of the pool.</value>

@@ -53,7 +53,7 @@ namespace Hyperledger.Aries.Tests.Protocols
 
             _eventAggregator = new EventAggregator();
 
-            var messageService = new DefaultMessageService(new Mock<ILogger<DefaultMessageService>>().Object, new IMessageDispatcher[] { });
+            var messageService = new DefaultMessageService(new Mock<ILogger<DefaultMessageService>>().Object, new IMessageDispatcher[] { }, null);
 
             var provisioning = ServiceUtils.GetDefaultMockProvisioningService();
             var paymentService = new DefaultPaymentService();
@@ -68,6 +68,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             _connectionService = new DefaultConnectionService(
                 _eventAggregator,
                 recordService,
+                null,
                 provisioning,
                 new Mock<ILogger<DefaultConnectionService>>().Object);
 
@@ -264,7 +265,7 @@ namespace Hyperledger.Aries.Tests.Protocols
                 Assert.NotNull(proofRequest);
 
                 //Holder stores the proof request
-                var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection);
+                var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection, false);
                 var holderProofRecord = await _proofService.GetAsync(_holderWallet, holderProofRequestId.Id);
                 var holderProofObject =
                     JsonConvert.DeserializeObject<ProofRequest>(holderProofRecord.RequestJson);
@@ -368,7 +369,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             Assert.NotNull(proofRequest);
 
             //Holder stores the proof request
-            var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection);
+            var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection, false);
             var holderProofRecord = await _proofService.GetAsync(_holderWallet, holderProofRequestId.Id);
             var holderProofObject =
                 JsonConvert.DeserializeObject<ProofRequest>(holderProofRecord.RequestJson);
@@ -461,7 +462,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             Assert.NotNull(proofRequest);
 
             //Holder stores the proof request
-            var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection);
+            var holderProofRequestId = await _proofService.ProcessRequestAsync(_holderWallet, proofRequest, holderConnection, false);
 
             //Holder accepts the proof request and sends a proof
             await _proofService.RejectProofRequestAsync(_holderWallet, holderProofRequestId.Id);

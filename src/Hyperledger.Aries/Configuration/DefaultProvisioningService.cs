@@ -138,10 +138,10 @@ namespace Hyperledger.Aries.Configuration
                 Endpoint = endpoint,
                 Owner =
                 {
-                    Name = configuration.OwnerName,
-                    ImageUrl = configuration.OwnerImageUrl
+                    Name = agentOptions.AgentName,
+                    ImageUrl = agentOptions.AgentImageUri
                 },
-                PassCode = configuration.PassCode
+                PassCode = agentOptions.PassCode
             };
 
             // Issuer Configuration

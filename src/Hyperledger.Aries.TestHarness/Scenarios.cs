@@ -179,7 +179,7 @@ namespace Hyperledger.TestHarness
             Assert.NotNull(proofRequest);
 
             //Holder stores the proof request
-            var holderProofRequestRecord = await proofService.ProcessRequestAsync(holderContext, proofRequest, holderConnection);
+            var holderProofRequestRecord = await proofService.ProcessRequestAsync(holderContext, proofRequest, holderConnection, false);
             var holderProofRecord = await proofService.GetAsync(holderContext, holderProofRequestRecord.Id);
             var holderProofRequest = JsonConvert.DeserializeObject<ProofRequest>(holderProofRecord.RequestJson);
 

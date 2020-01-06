@@ -52,5 +52,10 @@ namespace Hyperledger.Aries.Tests
         {
             throw new System.NotImplementedException();
         }
+
+        public Task<(ConnectionRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, ConnectionInvitationMessage offer, string responseEndpoint = "")
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

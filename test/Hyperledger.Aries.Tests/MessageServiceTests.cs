@@ -19,6 +19,7 @@ using Xunit;
 using Hyperledger.Aries.Features.DidExchange;
 using Hyperledger.Aries.Storage;
 using Hyperledger.Aries.Features.Routing;
+using Hyperledger.Aries.Contracts;
 
 namespace Hyperledger.Aries.Tests
 {
@@ -69,7 +70,7 @@ namespace Hyperledger.Aries.Tests
             var httpMessageDispatcher = new HttpMessageDispatcher(clientFactory.Object);
 
             _messagingService =
-                new DefaultMessageService(new Mock<ILogger<DefaultMessageService>>().Object, new[] { httpMessageDispatcher });
+                new DefaultMessageService(new Mock<ILogger<DefaultMessageService>>().Object, new[] { httpMessageDispatcher }, null);
         }
 
         public async Task InitializeAsync()

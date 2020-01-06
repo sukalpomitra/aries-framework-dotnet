@@ -41,7 +41,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             _provisioningService = ServiceUtils.GetDefaultMockProvisioningService();
             _connectionService = new DefaultConnectionService(
                 _eventAggregator,
-                new DefaultWalletRecordService(),
+                new DefaultWalletRecordService(), null,
                 _provisioningService,
                 new Mock<ILogger<DefaultConnectionService>>().Object);
         }
@@ -91,6 +91,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             var connectionService = new DefaultConnectionService(
                 _eventAggregator,
                 new DefaultWalletRecordService(),
+                null,
                 provisioningService,
                 new Mock<ILogger<DefaultConnectionService>>().Object);
 
@@ -108,6 +109,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             var connectionService = new DefaultConnectionService(
                 _eventAggregator,
                 new DefaultWalletRecordService(),
+                null,
                 provisioningService,
                 new Mock<ILogger<DefaultConnectionService>>().Object);
 
@@ -127,6 +129,7 @@ namespace Hyperledger.Aries.Tests.Protocols
             var connectionService = new DefaultConnectionService(
                 _eventAggregator,
                 new DefaultWalletRecordService(),
+                null,
                 provisioningService,
                 new Mock<ILogger<DefaultConnectionService>>().Object);
 
