@@ -8,7 +8,7 @@ namespace Hyperledger.Aries.Agents
     /// <summary>
     /// A message context object that surrounds an agent message
     /// </summary>
-    public abstract class MessageContext
+    public class MessageContext
     {
         /// <summary>
         /// The message as JSON
@@ -18,7 +18,7 @@ namespace Hyperledger.Aries.Agents
         /// <summary>Initializes a new instance of the <see cref="MessageContext"/> class.</summary>
         /// <param name="message">The message.</param>
         /// <param name="packed">if set to <c>true</c> [packed].</param>
-        protected MessageContext(byte[] message, bool packed)
+        public MessageContext(byte[] message, bool packed)
         {
             Packed = packed;
             Payload = message;

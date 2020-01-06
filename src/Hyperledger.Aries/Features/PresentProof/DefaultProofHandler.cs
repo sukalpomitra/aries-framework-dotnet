@@ -36,28 +36,11 @@ namespace Hyperledger.Aries.Features.PresentProof
         {
             switch (messageContext.GetMessageType())
             {
-                // v0.1
-                //case MessageTypes.ProofRequest:
-                //{
-                //    var request = messageContext.GetMessage<ProofRequestMessage>();
-                //    var proofId = await _proofService.ProcessProofRequestAsync(agentContext, request, messageContext.Connection, false);
-                //    messageContext.ContextRecord = await _proofService.GetAsync(agentContext, proofId);
-                //    break;
-                //}
-                //case MessageTypes.DisclosedProof:
-                //{
-                //    var proof = messageContext.GetMessage<ProofMessage>();
-                //    var proofId = await _proofService.ProcessProofAsync(agentContext, proof);
-
-                //    messageContext.ContextRecord = await _proofService.GetAsync(agentContext, proofId);
-                //    break;
-                //}
-
                 // v1.0
                 case MessageTypes.PresentProofNames.RequestPresentation:
                 {
                     var message = messageContext.GetMessage<RequestPresentationMessage>();
-                    var record = await _proofService.ProcessRequestAsync(agentContext, message, messageContext.Connection);
+                    var record = await _proofService.ProcessRequestAsync(agentContext, message, messageContext.Connection, false);
 
                     messageContext.ContextRecord = record;
                     break;
