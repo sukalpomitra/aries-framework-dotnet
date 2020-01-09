@@ -286,6 +286,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             var service = requestPresentation.GetDecorator<ServiceDecorator>(DecoratorNames.ServiceDecorator);
 
             var record = await ProcessRequestAsync(agentContext, requestPresentation, null, false);
+            
             var (presentationMessage, proofRecord) = await CreatePresentationAsync(agentContext, record.Id, requestedCredentials);
 
             await MessageService.SendAsync(
@@ -295,7 +296,7 @@ namespace Hyperledger.Aries.Features.PresentProof
                 endpointUri: service.ServiceEndpoint,
                 routingKeys: service.RoutingKeys?.ToArray());
 
-            return proofRecord;
+            return record;
         }
 
         /// <inheritdoc />
@@ -644,13 +645,24 @@ namespace Hyperledger.Aries.Features.PresentProof
             CreateProofAsync(agentContext, proofRequest, requestedCredentials);
 
         /// <inheritdoc />
-        public async Task<(PresentationMessage, ProofRecord)> CreatePresentationAsync(IAgentContext agentContext, string proofRecordId, RequestedCredentials requestedCredentials)
+        public async Task<(PresentationMessage, ConnectionRecord)> CreatePresentationAsync(IAgentContext agentContext, string proofRecordId, RequestedCredentials requestedCredentials)
         {
             var record = await GetAsync(agentContext, proofRecordId);
 
             if (record.State != ProofState.Requested)
                 throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Proof state was invalid. Expected '{ProofState.Requested}', found '{record.State}'");
+
+            var connectionId = record.ConnectionId;
+            ConnectionRecord connection = null;
+            if (connectionId != null)
+            {
+                connection = await ConnectionService.GetAsync(agentContext, connectionId);
+
+                if (connection.State != ConnectionState.Connected)
+                    throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
+                        $"Connection state was invalid. Expected '{ConnectionState.Connected}', found '{connection.State}'");
+            }
 
             var proofJson = await CreatePresentationAsync(
                 agentContext,
@@ -689,7 +701,7 @@ namespace Hyperledger.Aries.Features.PresentProof
             };
             proofMsg.ThreadFrom(threadId);
 
-            return (proofMsg, record);
+            return (proofMsg, connection);
         }
 
         #endregion

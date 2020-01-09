@@ -93,7 +93,7 @@ namespace Hyperledger.Aries.Features.PresentProof
         /// <returns>
         /// The proof.
         /// </returns>
-        Task<(PresentationMessage, ProofRecord)> CreatePresentationAsync(IAgentContext agentContext,
+        Task<(PresentationMessage, ConnectionRecord)> CreatePresentationAsync(IAgentContext agentContext,
             string proofRecordId, RequestedCredentials requestedCredentials);
 
         /// <summary>

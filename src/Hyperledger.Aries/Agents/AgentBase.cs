@@ -119,8 +119,10 @@ namespace Hyperledger.Aries.Agents
         {
             UnpackResult unpacked = null;
             UnpackedMessageContext inboundMessageContext = null;
-            if (messageContext is PackedMessageContext packedMessageContext)
+            PackedMessageContext packedMessageContext = null;
+            if (messageContext.Packed)
             {
+                packedMessageContext = new PackedMessageContext(messageContext.Payload);
                 (inboundMessageContext, unpacked) = await UnpackAsync(agentContext, packedMessageContext);
                 Logger.LogInformation($"Agent Message Received : {inboundMessageContext.ToJson()}");
             }

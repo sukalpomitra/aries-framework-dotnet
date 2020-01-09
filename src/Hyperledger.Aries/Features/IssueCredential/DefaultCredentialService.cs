@@ -287,7 +287,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
         }
 
         /// <inheritdoc />
-        public async Task<(CredentialRequestMessage, CredentialRecord)> CreateRequestAsync(IAgentContext agentContext, string credentialId)
+        public async Task<(CredentialRequestMessage, ConnectionRecord)> CreateRequestAsync(IAgentContext agentContext, string credentialId)
         {
             var credential = await GetAsync(agentContext, credentialId);
 
@@ -296,9 +296,10 @@ namespace Hyperledger.Aries.Features.IssueCredential
                     $"Credential state was invalid. Expected '{CredentialState.Offered}', found '{credential.State}'");
 
             string proverDid = null;
+            ConnectionRecord connection = null;
             if (credential.ConnectionId != null)
             {
-                var connection = await ConnectionService.GetAsync(agentContext, credential.ConnectionId);
+                connection = await ConnectionService.GetAsync(agentContext, credential.ConnectionId);
                 proverDid = connection.MyDid;
             }
             else
@@ -344,7 +345,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
             };
 
             response.ThreadFrom(threadId);
-            return (response, credential);
+            return (response, connection);
         }
 
         /// <inheritdoc />

@@ -1,4 +1,5 @@
-﻿using Hyperledger.Aries.Storage;
+﻿using System;
+using Hyperledger.Aries.Storage;
 
 namespace Hyperledger.Aries.Configuration
 {
@@ -63,7 +64,7 @@ namespace Hyperledger.Aries.Configuration
         /// Gets or sets the agent endpoint uri
         /// </summary>
         /// <value></value>
-        public string EndpointUri { get; set; }
+        public Uri EndpointUri { get; set; }
 
         /// <summary>
         /// Gets or sets the agent name used in connection invitations
