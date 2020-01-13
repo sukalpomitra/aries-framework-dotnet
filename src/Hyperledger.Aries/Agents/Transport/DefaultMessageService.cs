@@ -87,16 +87,16 @@ namespace Hyperledger.Aries.Agents
             if (string.IsNullOrEmpty(endpointUri))
                 throw new ArgumentNullException(nameof(endpointUri));
 
-            var uri = new Uri(endpointUri);
+            var wireMsg = await CryptoUtils.PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
+            var (msg, serviceEndpoint) = await PrepareRouteAsync(wallet, wireMsg, endpointUri);
+            var uri = new Uri(serviceEndpoint);
 
             var dispatcher = GetDispatcher(uri.Scheme);
 
             if (dispatcher == null)
                 throw new AriesFrameworkException(ErrorCode.A2AMessageTransmissionError, $"No registered dispatcher for transport scheme : {uri.Scheme}");
 
-            var wireMsg = await CryptoUtils.PrepareAsync(wallet, message, recipientKey, routingKeys, senderKey);
-
-            await dispatcher.DispatchAsync(uri, new PackedMessageContext(wireMsg));
+            await dispatcher.DispatchAsync(uri, new PackedMessageContext(msg));
         }
         public Task<MessageContext> SendReceiveAsync(Wallet wallet, AgentMessage message, string recipientKey, string endpointUri, string[] routingKeys = null, string senderKey = null)
         {
