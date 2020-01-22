@@ -25,9 +25,9 @@ namespace Hyperledger.Aries.Agents
             AddProofHandler();
             AddCredentialHandler();
             AddProofHandler();
-            AddDiscoveryHandler();
-            AddBasicMessageHandler();
-            AddForwardHandler();
+            //AddDiscoveryHandler();
+            //AddBasicMessageHandler();
+            //AddForwardHandler();
             AddTrustPingHandler();
         }
     }
