@@ -668,13 +668,13 @@ namespace Hyperledger.Aries.Features.PresentProof
                 agentContext,
                 record.RequestJson.ToObject<ProofRequest>(),
                 requestedCredentials);
-            /* See if this is required */
-            /*if (proofJson.Contains("\"rev_reg_id\":null"))
+            /* This is required */
+            if (proofJson.Contains("\"rev_reg_id\":null"))
             {
                 String[] separator = { "\"rev_reg_id\":null" };
                 String[] proofJsonList = proofJson.Split(separator, StringSplitOptions.None);
                 proofJson = proofJsonList[0] + "\"rev_reg_id\":null,\"timestamp\":null}]}";
-            }*/
+            }
             record.ProofJson = proofJson;
             await record.TriggerAsync(ProofTrigger.Accept);
             await RecordService.UpdateAsync(agentContext.Wallet, record);
