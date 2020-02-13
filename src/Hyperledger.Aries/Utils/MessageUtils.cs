@@ -16,7 +16,7 @@ namespace Hyperledger.Aries.Utils
         /// <summary>
         /// The valid query parameters.
         /// </summary>
-        public static string[] ValidQueryParameters = { "m", "c_i", "c_a_r" };
+        public static string[] ValidQueryParameters = { "m", "c_i", "c_a_r", "d_m" };
 
         /// <summary>
         /// Encodes a message to a valid URL based format.
