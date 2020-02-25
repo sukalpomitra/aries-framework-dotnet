@@ -49,6 +49,10 @@
         /// <summary>
         /// Insufficient funds at the specified address
         /// </summary>
-        PaymentInsufficientFunds
+        PaymentInsufficientFunds,
+        /// <summary>
+        /// Encoding values in the supplied proof are invalid
+        /// </summary>
+        InvalidProofEncoding
     }
 }

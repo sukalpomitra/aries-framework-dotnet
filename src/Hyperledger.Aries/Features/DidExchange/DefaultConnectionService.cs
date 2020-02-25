@@ -115,13 +115,13 @@ namespace Hyperledger.Aries.Features.DidExchange
             await RecordService.AddAsync(agentContext.Wallet, connection);
 
             return (new ConnectionInvitationMessage
-                    {
-                        ServiceEndpoint = uri,
-                        RoutingKeys = null,//provisioning.Endpoint.Verkey != null ? new[] {provisioning.Endpoint.Verkey} : null,
-                        RecipientKeys = new[] {connectionKey},
-                        Label = config.MyAlias.Name ?? provisioning.Owner.Name,
-                        ImageUrl = config.MyAlias.ImageUrl ?? provisioning.Owner.ImageUrl
-                    }, connection);
+            {
+                ServiceEndpoint = provisioning.Endpoint.Uri,
+                RoutingKeys = provisioning.Endpoint.Verkey != null ? provisioning.Endpoint.Verkey : null,
+                RecipientKeys = new[] { connectionKey },
+                Label = config.MyAlias.Name ?? provisioning.Owner.Name,
+                ImageUrl = config.MyAlias.ImageUrl ?? provisioning.Owner.ImageUrl
+            }, connection);
         }
 
         /// <inheritdoc />
@@ -147,7 +147,7 @@ namespace Hyperledger.Aries.Features.DidExchange
 
             var connection = new ConnectionRecord
             {
-                Endpoint = new AgentEndpoint(invitation.ServiceEndpoint, null, invitation.RoutingKeys != null && invitation.RoutingKeys.Count != 0 ? invitation.RoutingKeys[0] : null),
+                Endpoint = new AgentEndpoint(invitation.ServiceEndpoint, null, invitation.RoutingKeys != null && invitation.RoutingKeys.Count != 0 ? invitation.RoutingKeys.ToArray() : null),
                 MyDid = my.Did,
                 MyVk = my.VerKey,
                 Id = Guid.NewGuid().ToString().ToLowerInvariant(),
@@ -209,7 +209,7 @@ namespace Hyperledger.Aries.Features.DidExchange
                 request.Connection.DidDoc.Services.Count > 0 &&
                 request.Connection.DidDoc.Services[0] is IndyAgentDidDocService service)
             {
-                connection.Endpoint = new AgentEndpoint(service.ServiceEndpoint, null, service.RoutingKeys != null && service.RoutingKeys.Count > 0 ? service.RoutingKeys[0] : null);
+                connection.Endpoint = new AgentEndpoint(service.ServiceEndpoint, null, service.RoutingKeys != null && service.RoutingKeys.Count > 0 ? service.RoutingKeys.ToArray() : null);
             }
 
             connection.TheirDid = request.Connection.Did;
@@ -266,7 +266,7 @@ namespace Hyperledger.Aries.Features.DidExchange
 
             //TODO throw exception or a problem report if the connection request features a did doc that has no indy agent did doc convention featured
             //i.e there is no way for this agent to respond to messages. And or no keys specified
-            var connectionObj = SignatureUtils.UnpackAndVerifyData<Connection>(response.ConnectionSig);
+            var connectionObj = await SignatureUtils.UnpackAndVerifyAsync<Connection>(response.ConnectionSig);
 
             await Did.StoreTheirDidAsync(agentContext.Wallet,
                 new { did = connectionObj.Did, verkey = connectionObj.DidDoc.Keys[0].PublicKeyBase58 }.ToJson());
@@ -280,7 +280,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             connection.SetTag(TagConstants.LastThreadId, response.GetThreadId());
 
             if (connectionObj.DidDoc.Services[0] is IndyAgentDidDocService service)
-                connection.Endpoint = new AgentEndpoint(service.ServiceEndpoint, null, service.RoutingKeys != null && service.RoutingKeys.Count > 0 ? service.RoutingKeys[0] : null);
+                connection.Endpoint = new AgentEndpoint(service.ServiceEndpoint, null, service.RoutingKeys != null && service.RoutingKeys.Count > 0 ? service.RoutingKeys.ToArray() : null);
 
             await connection.TriggerAsync(ConnectionTrigger.Response);
             await RecordService.UpdateAsync(agentContext.Wallet, connection);
@@ -328,7 +328,7 @@ namespace Hyperledger.Aries.Features.DidExchange
                 DidDoc = connection.MyDidDoc(provisioning, responseEndpoint)
             };
 
-            var sigData = await SignatureUtils.SignData(agentContext, connectionData, connection.GetTag(TagConstants.ConnectionKey));
+            var sigData = await SignatureUtils.SignDataAsync(agentContext, connectionData, connection.GetTag(TagConstants.ConnectionKey));
             var threadId = connection.GetTag(TagConstants.LastThreadId);
 
             var response = new ConnectionResponseMessage { ConnectionSig = sigData };

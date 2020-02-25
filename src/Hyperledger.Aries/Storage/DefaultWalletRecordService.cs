@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Extensions;
 using Hyperledger.Indy.NonSecretsApi;
 using Hyperledger.Indy.WalletApi;
@@ -19,7 +20,11 @@ namespace Hyperledger.Aries.Storage
         {
             _jsonSettings = new JsonSerializerSettings
             {
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
+                Converters = new List<JsonConverter>
+                {
+                    new AgentEndpointJsonConverter()
+                }
             };
         }
 
@@ -50,7 +55,7 @@ namespace Hyperledger.Aries.Storage
                 return result.Records?
                            .Select(x =>
                            {
-                               var record = JsonConvert.DeserializeObject<T>(x.Value);
+                               var record = JsonConvert.DeserializeObject<T>(x.Value, _jsonSettings);
                                foreach (var tag in x.Tags)
                                    record.Tags[tag.Key] = tag.Value;
                                return record;

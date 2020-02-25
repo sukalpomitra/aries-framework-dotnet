@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
+using Hyperledger.Aries.Configuration;
 using Hyperledger.Aries.Features.DidExchange;
 using Hyperledger.Aries.Storage;
+using Hyperledger.Indy.WalletApi;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Hyperledger.Aries.Routing
 {
@@ -14,17 +17,20 @@ namespace Hyperledger.Aries.Routing
         private readonly IWalletRecordService recordService;
         private readonly IWalletService walletService;
         private readonly IRoutingStore routingStore;
+        private readonly AgentOptions options;
         private readonly ILogger<RoutingInboxHandler> logger;
 
         public RoutingInboxHandler(
             IWalletRecordService recordService,
             IWalletService walletService,
             IRoutingStore routingStore,
+            IOptions<AgentOptions> options,
             ILogger<RoutingInboxHandler> logger)
         {
             this.recordService = recordService;
             this.walletService = walletService;
             this.routingStore = routingStore;
+            this.options = options.Value;
             this.logger = logger;
         }
 
@@ -87,7 +93,17 @@ namespace Hyperledger.Aries.Routing
                 DeviceId = addDeviceInfoMessage.DeviceId,
                 DeviceVendor = addDeviceInfoMessage.DeviceVendor
             };
-            await recordService.AddAsync(agentContext.Wallet, deviceRecord);
+            try
+            {
+                await recordService.AddAsync(agentContext.Wallet, deviceRecord);
+            }
+            catch (WalletItemAlreadyExistsException)
+            {
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Unable to register device", addDeviceInfoMessage);
+            }
         }
 
         private async Task DeleteInboxItemsAsync(IAgentContext agentContext, ConnectionRecord connection, DeleteInboxItemsMessage deleteInboxItemsMessage)
@@ -146,7 +162,11 @@ namespace Hyperledger.Aries.Routing
             var inboxRecord = new InboxRecord
             {
                 Id = inboxId,
-                WalletConfiguration = new WalletConfiguration { Id = inboxId },
+                WalletConfiguration = new WalletConfiguration
+                {
+                    Id = inboxId,
+                    StorageType = options.WalletConfiguration?.StorageType ?? "default"
+                },
                 WalletCredentials = new WalletCredentials { Key = inboxKey }
             };
             connection.SetTag("InboxId", inboxId);
