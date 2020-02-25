@@ -9,6 +9,7 @@ using Hyperledger.Aries.Utils;
 using Hyperledger.Indy.WalletApi;
 using Microsoft.Extensions.Logging;
 using Hyperledger.Aries.Agents;
+using Newtonsoft.Json.Linq;
 
 namespace Hyperledger.Aries.Agents
 {
@@ -50,7 +51,7 @@ namespace Hyperledger.Aries.Agents
             {
                 counter++;
                 var record = _registrationService.getRandomCloudAgent(records);
-                message = await CryptoUtils.PackAsync(wallet, record.TheirVk, new ForwardMessage { Message = message.GetUTF8String(), To = endpointUri });
+                message = await CryptoUtils.PackAsync(wallet, record.TheirVk, new ForwardMessage { Message = JObject.Parse(message.GetUTF8String()), To = endpointUri });
                 endpointUri = record.Endpoint.ServiceEndpoint;
             }
             return (message, endpointUri);

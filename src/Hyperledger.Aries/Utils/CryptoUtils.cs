@@ -153,7 +153,7 @@ namespace Hyperledger.Aries.Utils
                                 ?? connection.TheirVk
                                 ?? throw new AriesFrameworkException(
                                     ErrorCode.A2AMessageTransmissionError, "Cannot find encryption key");
-            var routingKeys = useRoutingKeys && connection.Endpoint?.Verkey != null ? new[] { connection.Endpoint.Verkey } : new string[0];
+            var routingKeys = useRoutingKeys && connection.Endpoint?.Verkey != null ? connection.Endpoint.Verkey : new string[0];
             return PrepareAsync(wallet, message, recipientKey, routingKeys, connection.MyVk);
         }
     }
